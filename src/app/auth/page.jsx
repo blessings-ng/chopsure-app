@@ -29,7 +29,7 @@ function AuthContent() {
         </Link>
 
         {/* Logo */}
-        <div className="mb-12">
+        <div className="mb-8">
            <span className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">
               ChopSure
            </span>
