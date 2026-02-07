@@ -62,9 +62,10 @@ function AuthContent() {
                     <a href="#" className="text-[#FF6B00] hover:underline">Forgot Password?</a>
                   </div>
 
-                  <button className="w-full h-14 bg-[#FF6B00] text-white font-black uppercase italic tracking-wider rounded-xl hover:bg-black dark:hover:bg-white dark:hover:text-black transition-all shadow-lg hover:shadow-orange-500/20 active:scale-[0.98]">
-                    Secure Login
-                  </button>
+                 <button type="submit" className="relative w-full h-11 bg-transparent border-2 border-[#FF6B00] rounded-full text-[#FF6B00] dark:text-white font-bold uppercase tracking-wider overflow-hidden group transition-all hover:text-white mt-4">
+              <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>
+              <span className="relative z-10">Secure Login</span>
+            </button>
                 </form>
 
                 <p className="mt-8 text-center text-sm font-medium text-slate-500">
@@ -100,9 +101,10 @@ function AuthContent() {
                     </p>
                   </div>
 
-                  <button className="w-full h-14 bg-[#FF6B00] text-white font-black uppercase italic tracking-wider rounded-xl hover:bg-black dark:hover:bg-white dark:hover:text-black transition-all shadow-lg hover:shadow-orange-500/20 active:scale-[0.98]">
-                    Create Account
-                  </button>
+                 <button type="submit" className="relative w-full h-11 bg-transparent border-2 border-[#FF6B00] rounded-full text-[#FF6B00] dark:text-white font-bold uppercase tracking-wider overflow-hidden group transition-all hover:text-white mt-4">
+              <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>
+              <span className="relative z-10">Create Account</span>
+            </button>
                 </form>
 
                 <p className="mt-8 text-center text-sm font-medium text-slate-500">

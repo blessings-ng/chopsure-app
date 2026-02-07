@@ -5,7 +5,7 @@ export default function Header({ searchQuery, setSearchQuery, cartCount, setIsCa
   return (
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10 px-6 py-4 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <Link href="/" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+        <Link href="/dashboard" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
           <ArrowLeft size={20} className="text-slate-600 dark:text-white" />
         </Link>
         <h1 className="text-xl font-black italic uppercase text-slate-900 dark:text-white">

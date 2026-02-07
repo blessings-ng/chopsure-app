@@ -10,11 +10,9 @@ export default function MiniMartPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // FIXED: Ensure strict initialization to empty object
   const [cart, setCart] = useState({}); 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Cart Logic
   const addToCart = (id) => setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   
   const removeFromCart = (id) => {

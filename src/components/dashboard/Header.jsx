@@ -28,7 +28,7 @@ export default function Header() {
 
         <div className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-white/10">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-slate-900 dark:text-white">Blessing Igwe</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">Blessings Igwe</p>
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00]">Premium Plan</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FF6B00] to-orange-400 p-[2px]">
