@@ -1,207 +1,117 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { User, Lock, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { User, Building2, ArrowUpRight, ArrowDownLeft, ArrowLeft } from "lucide-react";
 
-function AuthContent() {
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode");
-  const [isLogin, setIsLogin] = useState(true);
-
-  // Sync state with URL
-  useEffect(() => {
-    if (mode === "signup") setIsLogin(false);
-    else setIsLogin(true);
-  }, [mode]);
-
+export default function AuthSelectionPage() {
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500">
+    <div className="h-screen w-full bg-[#050505] overflow-hidden relative font-sans selection:bg-[#FF6B00] selection:text-white">
       
-      {/* 1. LEFT SIDE - THE FORM SECTION */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 relative z-10 bg-white dark:bg-[#050505] transition-colors duration-500 border-r border-slate-100 dark:border-white/5">
-        
-        {/* Back Link */}
-        <Link href="/" className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] transition-colors font-bold uppercase tracking-widest text-[10px]">
-          <ArrowLeft size={14} /> Back Home
-        </Link>
-
-        {/* Logo */}
-        <div className="mb-8">
-           <span className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">
-              ChopSure
-           </span>
-        </div>
-
-        {/* Form Container */}
-        <div className="w-full max-w-md">
-          <AnimatePresence mode="wait">
-            
-            {/* --- VIEW: LOGIN --- */}
-            {isLogin ? (
-              <motion.div 
-                key="login"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h1 className="text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Welcome Back</h1>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Access your food vault.</p>
-
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-                  <InputGroup label="Username" type="text" icon={<User size={18}/>} />
-                  <InputGroup label="Password" type="password" icon={<Lock size={18}/>} />
-                  
-                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
-                      <input type="checkbox" className="accent-[#FF6B00]" /> Remember me
-                    </label>
-                    <a href="#" className="text-[#FF6B00] hover:underline">Forgot Password?</a>
-                  </div>
-
-                 <button type="submit" className="relative w-full h-11 bg-transparent border-2 border-[#FF6B00] rounded-full text-[#FF6B00] dark:text-white font-bold uppercase tracking-wider overflow-hidden group transition-all hover:text-white mt-4">
-              <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>
-              <span className="relative z-10">Secure Login</span>
-            </button>
-                </form>
-
-                <p className="mt-8 text-center text-sm font-medium text-slate-500">
-                  Don't have a vault? 
-                  <button onClick={() => setIsLogin(false)} className="ml-2 text-[#FF6B00] font-bold hover:underline">Get Access</button>
-                </p>
-              </motion.div>
-            ) : (
-              
-              /* --- VIEW: REGISTER --- */
-              <motion.div 
-                key="signup"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h1 className="text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Secure My Month</h1>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Create your food budget plan.</p>
-
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-                  <div className="grid grid-cols-2 gap-4">
-                     <InputGroup label="First Name" type="text" />
-                     <InputGroup label="Last Name" type="text" />
-                  </div>
-                  <InputGroup label="Email Address" type="email" icon={<Mail size={18}/>} />
-                  <InputGroup label="Create Password" type="password" icon={<Lock size={18}/>} />
-                  
-                  <div className="flex gap-3 items-start p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
-                    <CheckCircle2 size={20} className="text-[#FF6B00] shrink-0 mt-0.5" />
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      By registering, I agree to lock my budget and receive guaranteed meals from ChopSure partners.
-                    </p>
-                  </div>
-
-                 <button type="submit" className="relative w-full h-11 bg-transparent border-2 border-[#FF6B00] rounded-full text-[#FF6B00] dark:text-white font-bold uppercase tracking-wider overflow-hidden group transition-all hover:text-white mt-4">
-              <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>
-              <span className="relative z-10">Create Account</span>
-            </button>
-                </form>
-
-                <p className="mt-8 text-center text-sm font-medium text-slate-500">
-                  Already secured? 
-                  <button onClick={() => setIsLogin(true)} className="ml-2 text-[#FF6B00] font-bold hover:underline">Login here</button>
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      {/* BRAND HEADER (Floating Top Left) */}
+      <div className="absolute top-6 left-6 z-50 pointer-events-none">
+         <span className="text-xl font-black italic tracking-tighter text-white uppercase drop-shadow-md">
+            Chop<span className="text-[#FF6B00]">Sure</span>
+         </span>
       </div>
 
-      {/* 2. RIGHT SIDE - THE VISUAL (Sticky Brand Area) */}
-      <div className="hidden lg:flex w-[55%] bg-[#0a0a0a] relative overflow-hidden items-center justify-center p-20">
-        
+      {/* --- NEW BACK BUTTON (Floating Top Right) --- */}
+      <Link 
+        href="/" 
+        className="absolute top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-white hover:bg-[#FF6B00] hover:border-[#FF6B00] transition-all duration-300 group"
+      >
+        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+        <span className="hidden sm:inline">Back Home</span>
+      </Link>
+
+
+      {/* =========================================
+          SECTION 1: INDIVIDUAL (Top/Left Diagonal)
+         ========================================= */}
+      <Link 
+        href="/auth/login"
+        className="group absolute inset-0 w-full h-full z-20 bg-[#050505] hover:z-30 transition-all duration-500
+        [clip-path:polygon(0_0,120%_0,-20%_100%)] 
+        md:[clip-path:polygon(0_0,100%_0,0_100%)]
+        hover:[clip-path:polygon(0_0,130%_0,-30%_100%)] 
+        md:hover:[clip-path:polygon(0_0,110%_0,-10%_110%)]"
+      >
         {/* Background Image */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1543353071-873f17a7a088?q=80&w=2070&auto=format&fit=crop" 
-            className="w-full h-full object-cover opacity-40 grayscale"
-            alt="Food Texture" 
+            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" 
+            alt="Individual"
+            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-[#FF6B00]/20 mix-blend-overlay"></div>
-          <div className="absolute inset-0 bg-black/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-[#FF6B00]/40 to-transparent mix-blend-multiply"></div>
         </div>
 
         {/* Content */}
-        <div className="relative z-10 max-w-lg">
-           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] text-xs font-black uppercase tracking-widest mb-8 backdrop-blur-md">
-              <CheckCircle2 size={14} /> Guaranteed Meals
+        <div className="absolute top-[18%] left-6 md:top-[20%] md:left-[15%] max-w-xs">
+           <div className="mb-4 w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#FF6B00] flex items-center justify-center text-white shadow-[0_0_20px_rgba(255,107,0,0.5)]">
+              <User size={20} className="md:w-6 md:h-6" />
            </div>
            
-           <h2 className="text-6xl font-black italic text-white uppercase leading-[0.9] tracking-tighter mb-6">
-              Don't Starve <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">In March.</span>
+           <h2 className="text-4xl sm:text-5xl md:text-7xl font-black italic text-white uppercase leading-[0.85] tracking-tighter drop-shadow-lg whitespace-nowrap">
+              Individual
            </h2>
            
-           <p className="text-lg text-white/70 font-medium leading-relaxed mb-10">
-              Join thousands of Nigerians who have automated their feeding. Lock your budget once, eat everyday. No stories.
+           <p className="mt-4 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80 border-l-2 border-[#FF6B00] pl-3">
+              Personal Food Vault
            </p>
-
-           {/* Stats */}
-           <div className="flex gap-8 border-t border-white/10 pt-8">
-              <div>
-                 <p className="text-3xl font-black text-white">12k+</p>
-                 <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Users Fed</p>
-              </div>
-              <div>
-                 <p className="text-3xl font-black text-white">99%</p>
-                 <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Uptime</p>
-              </div>
+           
+           <div className="mt-6 flex items-center gap-2 text-xs md:text-sm font-black uppercase text-[#FF6B00] bg-white px-4 py-2 rounded-full w-fit group-hover:bg-[#FF6B00] group-hover:text-white transition-colors">
+              Enter <ArrowUpRight size={14} className="md:w-4 md:h-4" />
            </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      </Link>
 
-// Reusable Input Component
-function InputGroup({ type, label, icon }) {
-  return (
-    <div className="relative group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#FF6B00] transition-colors">
-        {icon}
-      </div>
-      <input 
-        type={type} 
-        placeholder=" " // Required for label animation
-        required
-        className={`
-          peer w-full h-14 bg-slate-50 dark:bg-white/5 
-          border-2 border-slate-100 dark:border-white/5 rounded-xl
-          outline-none text-slate-900 dark:text-white font-bold
-          transition-all duration-300
-          focus:border-[#FF6B00] focus:bg-white dark:focus:bg-black
-          ${icon ? 'pl-12' : 'pl-4'} pr-4 pt-4
-        `}
-      />
-      <label className={`
-        absolute left-0 pointer-events-none
-        text-xs font-bold uppercase tracking-wide text-slate-400
-        transition-all duration-300
-        peer-focus:text-[10px] peer-focus:top-3 peer-focus:text-[#FF6B00]
-        peer-placeholder-shown:text-xs peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2
-        ${icon ? 'peer-focus:left-12 peer-placeholder-shown:left-12' : 'peer-focus:left-4 peer-placeholder-shown:left-4'}
-        top-3
-      `}>
-        {label}
-      </label>
-    </div>
-  );
-}
+      {/* =========================================
+          SECTION 2: COMPANY (Bottom/Right Diagonal)
+         ========================================= */}
+      <Link 
+        href="/auth/company"
+        className="group absolute inset-0 w-full h-full z-10 bg-[#1a1a1a] hover:z-30 transition-all duration-500
+        [clip-path:polygon(120%_0,100%_100%,-20%_100%)]
+        md:[clip-path:polygon(100%_0,100%_100%,0_100%)]
+        hover:[clip-path:polygon(130%_-10%,100%_100%,-30%_100%)]
+        md:hover:[clip-path:polygon(110%_-10%,100%_100%,-10%_100%)]"
+      >
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop" 
+            alt="Company"
+            className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+        </div>
 
-export default function AuthPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-100 dark:bg-[#050505]"></div>}>
-      <AuthContent />
-    </Suspense>
+        {/* Content */}
+        <div className="absolute bottom-[10%] right-6 md:bottom-[15%] md:right-[15%] text-right max-w-xs flex flex-col items-end">
+           <div className="mb-4 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+              <Building2 size={20} className="md:w-6 md:h-6" />
+           </div>
+           
+           <h2 className="text-4xl sm:text-5xl md:text-7xl font-black italic text-white uppercase leading-[0.85] tracking-tighter drop-shadow-lg whitespace-nowrap">
+              Company
+           </h2>
+           
+           <p className="mt-4 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/60 border-r-2 border-white pl-0 pr-3">
+              Corporate Staff Plan
+           </p>
+
+           <div className="mt-6 flex items-center gap-2 text-xs md:text-sm font-black uppercase text-black bg-white px-4 py-2 rounded-full w-fit group-hover:bg-slate-200 transition-colors">
+              <ArrowDownLeft size={14} className="md:w-4 md:h-4" /> Enter
+           </div>
+        </div>
+      </Link>
+
+      {/* THE SLASH DIVIDER */}
+      <div className="absolute inset-0 pointer-events-none z-40">
+        <div className="absolute top-0 left-0 w-full h-full bg-transparent border-t-0 border-l-0 border-[#FF6B00] opacity-50 
+        [clip-path:polygon(0_0,120%_0,-20%_100%)] md:[clip-path:polygon(0_0,100%_0,0_100%)]"></div>
+      </div>
+
+    </div>
   );
 }
