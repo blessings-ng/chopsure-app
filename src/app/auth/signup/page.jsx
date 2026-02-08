@@ -11,8 +11,8 @@ export default function SignupPage() {
       {/* 1. LEFT SIDE - SIGNUP FORM */}
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 relative z-10 bg-white dark:bg-[#050505] transition-colors duration-500 border-r border-slate-100 dark:border-white/5">
         
-        <Link href="/" className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] transition-colors font-bold uppercase tracking-widest text-[10px]">
-          <ArrowLeft size={14} /> Back Home
+        <Link href="/auth" className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] transition-colors font-bold uppercase tracking-widest text-[10px]">
+          <ArrowLeft size={14} /> Back to Selection
         </Link>
 
         <div className="mb-8">
