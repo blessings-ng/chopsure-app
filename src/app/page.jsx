@@ -121,7 +121,7 @@ export default function LandingPage() {
         </section>
 
         {/* 4. PARTNER MARQUEE */}
-        <div className="py-6 md:py-8 bg-[#FF6B00] overflow-hidden -rotate-2 scale-135 border-y-5 border-black dark:border-black relative z-20 shadow-xl">
+        <div className="py-4 md:py-4 bg-[#FF6B00] overflow-hidden -rotate-2 scale-135 border-y-5 border-black dark:border-black relative z-20 shadow-xl">
           <div className="flex gap-12 animate-marquee whitespace-nowrap">
             {[...Array(10)].map((_, i) => (
               <span key={i} className="text-2xl md:text-4xl font-black italic text-black uppercase tracking-tighter flex items-center gap-4">
