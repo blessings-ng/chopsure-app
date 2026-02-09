@@ -101,7 +101,7 @@ export default function LandingPage() {
             </p>
             
             <p className="text-sm md:text-lg text-slate-600 dark:text-slate-300 font-medium max-w-xl mx-auto px-4">
-              Your first HMO for food. Lock your monthly allowance. Redeem guaranteed meals at partner restaurants daily.
+              Your first FMO for food. Lock your monthly allowance. Redeem guaranteed meals at partner restaurants daily.
             </p>
 
             <div className="pt-8 flex flex-wrap justify-center gap-6">
