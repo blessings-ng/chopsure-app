@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, Check, X, MapPin } from "lucide-react";
-import { motion } from "framer-motion";
+import { Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, Check, X, MapPin, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function SignupPage() {
-  // 1. STATE MANAGEMENT
+  const supabase = createClient();
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -19,8 +23,13 @@ export default function SignupPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(null);
   const [isLengthValid, setIsLengthValid] = useState(false);
+  
+  // SUPABASE & UI STATES
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showToast, setShowToast] = useState(false);
 
-  // 2. REAL-TIME VALIDATION
+  // REAL-TIME VALIDATION
   useEffect(() => {
     setIsLengthValid(formData.password.length >= 6);
     if (formData.confirmPassword) {
@@ -32,20 +41,48 @@ export default function SignupPage() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError(""); 
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!passwordsMatch || !isLengthValid || !termsAccepted) return;
     
-    console.log("Creating Account...", formData);
-    alert("Account Created Successfully!");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            username: formData.username,
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+
+      setShowToast(true);
+      
+      setTimeout(() => {
+        router.push("/welcome"); 
+      }, 3000);
+      
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError(err.message); 
+      setIsLoading(false); // Only stop loading if it failed. If success, let it ride to dashboard.
+    }
   };
 
-  const isFormValid = passwordsMatch && isLengthValid && termsAccepted;
+  const isFormValid = passwordsMatch && isLengthValid && termsAccepted && !isLoading;
 
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500">
+    <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500 relative overflow-hidden">
       
       {/* LEFT SIDE - SIGNUP FORM */}
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-24 py-10 relative z-10 bg-white dark:bg-[#050505] transition-colors duration-500 border-r border-slate-100 dark:border-white/5 overflow-y-auto">
@@ -68,6 +105,14 @@ export default function SignupPage() {
           >
             <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Secure My Month</h1>
             <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium mb-8">Create your food budget plan.</p>
+
+            {/* ERROR MESSAGE DISPLAY */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500 text-xs font-bold uppercase tracking-wide">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
+                <span className="leading-relaxed">{error}</span>
+              </div>
+            )}
 
             <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit}>
               
@@ -133,7 +178,7 @@ export default function SignupPage() {
                 </p>
               </label>
 
-              {/* === THE BUTTON IS BACK === */}
+              {/* THE SUBMIT BUTTON */}
               <button 
                 type="submit" 
                 disabled={!isFormValid}
@@ -144,11 +189,12 @@ export default function SignupPage() {
                   }
                 `}
               >
-                {/* Only show the slide animation if the form is valid */}
                 {isFormValid && (
                   <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>
                 )}
-                <span className="relative z-10">Create Account</span>
+                <span className="relative z-10">
+                  {isLoading ? "Creating..." : "Create Account"}
+                </span>
               </button>
 
             </form>
@@ -163,7 +209,7 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE - VISUAL (Updated Stats) */}
+      {/* RIGHT SIDE - VISUAL */}
       <div className="hidden lg:flex w-[55%] bg-[#0a0a0a] relative overflow-hidden items-center justify-center p-20">
          <div className="absolute inset-0 z-0">
           <img 
@@ -192,8 +238,6 @@ export default function SignupPage() {
                  <p className="text-3xl font-black text-white">12k+</p>
                  <p className="text-xs text-white/50 uppercase tracking-widest font-bold">Users Fed</p>
               </div>
-              
-              {/* UPDATED STATS HERE */}
               <div>
                  <div className="flex items-baseline gap-1">
                     <p className="text-3xl font-black text-white">50+</p>
@@ -204,6 +248,33 @@ export default function SignupPage() {
            </div>
         </div>
       </div>
+
+      {/* THE PREMIUM TOAST NOTIFICATION */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-10 right-4 md:right-10 z-[100] bg-[#10B981] p-1 rounded-2xl shadow-[0_10px_40px_rgba(16,185,129,0.3)]"
+          >
+            <div className="bg-[#050505] rounded-xl px-6 py-4 flex items-center gap-4 border border-[#10B981]/30">
+              <div className="w-10 h-10 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981]">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <h4 className="text-white font-black italic uppercase tracking-wider text-sm md:text-base leading-none mb-1">
+                  Vault Secured.
+                </h4>
+                <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                  Redirecting to Dashboard...
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

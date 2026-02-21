@@ -4,28 +4,24 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 
-export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
+export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch by waiting for the component to mount
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <div className="w-10 h-10"></div>;
 
   return (
     <button
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="p-3 rounded-full bg-white/10 hover:bg-[#10B981]/20 text-slate-900 dark:text-white transition-all border border-transparent hover:border-[#10B981]"
-      aria-label="Toggle Theme"
+      className="w-10 h-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-[#FF6B00] hover:bg-slate-300 dark:hover:bg-white/20 transition-all duration-300"
+      aria-label="Toggle Dark Mode"
     >
-      {theme === "dark" ? (
-        <Sun size={20} className="text-[#FF6B00]" />
-      ) : (
-        <Moon size={20} className="text-slate-600" />
-      )}
+      {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
     </button>
   );
 }

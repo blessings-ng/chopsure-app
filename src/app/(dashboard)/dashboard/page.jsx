@@ -1,147 +1,203 @@
-import Link from "next/link";
-import { ArrowUpRight, TrendingUp, Calendar, ShoppingBag, CreditCard } from "lucide-react";
+"use client";
 
-export default function DashboardPage() {
-  return (
-    <div className="space-y-8">
-      
-      {/* 1. WELCOME SECTION */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-black italic uppercase text-slate-900 dark:text-white">
-            Overview
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">
-            Welcome back, your food budget is <span className="text-green-500 font-bold">Secure</span>.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link href="/market" className="px-5 py-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
-            RawMart
-          </Link>
-          <button className="px-5 py-2.5 bg-[#FF6B00] text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition-colors">
-            Top Up Vault
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, ShieldCheck, Zap, Briefcase, Users, CheckCircle2, X } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import VaultCard from "@/components/dashboard/VaultCard";
+import RecentActivity from "@/components/dashboard/RecentActivity";
+import Skeleton from "@/components/dashboard/Skeleton";
+
+const SuccessNotice = ({ show, onClose }) => (
+  <AnimatePresence>
+    {show && (
+      <motion.div 
+        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] md:w-auto"
+      >
+        <div className="bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-green-500/20 flex items-center gap-4 border border-white/20 backdrop-blur-xl">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <CheckCircle2 size={24} />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Order Confirmed</p>
+            <p className="text-sm font-bold italic uppercase">Purchase Successful!</p>
+          </div>
+          <button onClick={onClose} className="ml-4 p-1 hover:bg-white/10 rounded-lg transition-colors">
+            <X size={18} />
           </button>
         </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+export default function DashboardPage() {
+  const supabase = createClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [allowanceData, setAllowanceData] = useState({ remaining: 0, total: 0 });
+
+  useEffect(() => {
+    const getData = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        router.push("/auth/login");
+        return;
+      }
+      
+      setUser(user);
+
+      // Fetch dynamic allowance data from the wallet
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("daily_allowance, total_limit")
+        .eq("user_id", user.id)
+        .single();
+
+      if (wallet) {
+        setAllowanceData({
+          remaining: wallet.daily_allowance || 0,
+          total: wallet.total_limit || 1 // Avoid division by zero
+        });
+      }
+      
+      setLoading(false);
+    };
+    
+    getData();
+
+    if (searchParams.get("status") === "purchase_success") {
+      setShowSuccess(true);
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [router, supabase, searchParams]);
+
+  const tier = user?.user_metadata?.subscription_tier || "regular";
+  
+  const unitConfig = {
+    regular: { name: "Regular Unit", icon: <Zap size={14} />, theme: "text-slate-400 border-slate-400" },
+    worker: { name: "Worker Unit", icon: <Briefcase size={14} className="text-[#FF6B00]" />, theme: "text-[#FF6B00] border-[#FF6B00]" },
+    family: { name: "Family Unit", icon: <Users size={14} className="text-purple-500" />, theme: "text-purple-500 border-purple-500" }
+  };
+
+  const currentUnit = unitConfig[tier];
+  
+  // Calculate percentage for the progress bar
+  const allowancePercentage = (allowanceData.remaining / allowanceData.total) * 100;
+
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex justify-between items-end">
+          <div className="space-y-3"><Skeleton className="h-8 w-40" /><Skeleton className="h-4 w-60" /></div>
+          <div className="flex gap-3"><Skeleton className="h-11 w-24 rounded-xl" /><Skeleton className="h-11 w-32 rounded-xl" /></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="md:col-span-2 h-56 rounded-[2.5rem]" /><Skeleton className="h-56 rounded-[2.5rem]" />
+        </div>
+        <Skeleton className="h-80 rounded-[2.5rem] w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      className="relative space-y-10 pb-16"
+    >
+      <SuccessNotice show={showSuccess} onClose={() => setShowSuccess(false)} />
+
+      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-white/5 ${currentUnit.theme}`}>
+              {currentUnit.icon} {currentUnit.name}
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white">
+            welcome back!
+          </h1>
+        </div>
+
+        <div className="flex gap-3 w-full md:w-auto">
+          <Link href="/top-up" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-[#FF6B00] hover:text-black hover:border-[#FF6B00] transition-all">
+            Top Up
+          </Link>
+          <Link href="/subscription" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-[#FF6B00] text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-[0_15px_30_rgba(255,107,0,0.4)] hover:scale-105 transition-all">
+            Subscription
+          </Link>
+        </div>
       </div>
 
-      {/* 2. THE VAULT CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Main Vault Balance */}
-        <div className="md:col-span-2 bg-[#050505] rounded-[2rem] p-8 relative overflow-hidden text-white shadow-xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF6B00]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <VaultCard user={user} />
+
+        <div className="bg-[#FF6B00] rounded-[2.5rem] p-10 text-black relative overflow-hidden group shadow-xl">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+            <ShieldCheck size={120} strokeWidth={1} />
+          </div>
           
-          <div className="relative z-10 flex flex-col justify-between h-full min-h-[180px]">
-            <div className="flex items-start justify-between">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md">
-                <CreditCard size={24} className="text-[#FF6B00]" />
-              </div>
-              <span className="px-3 py-1 bg-green-500/20 text-green-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-500/20">
-                Active Plan
-              </span>
-            </div>
-            
+          <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Remaining Allowance</p>
             <div>
-              <p className="text-white/60 font-bold uppercase tracking-widest text-xs mb-1">Locked Budget</p>
-              <h2 className="text-5xl font-black tracking-tighter">₦ 150,000</h2>
-              <p className="text-xs text-white/40 mt-2 font-medium">For the month of March</p>
+              <h2 className="text-5xl font-black tracking-tighter italic leading-none">
+                ₦{allowanceData.remaining.toLocaleString()}
+              </h2>
+              <div className="flex items-center gap-2 mt-4">
+                <div className="h-1 flex-1 bg-black/10 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${allowancePercentage}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-black/40"
+                  />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                    {Math.round(allowancePercentage)}%
+                </span>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Daily Allowance */}
-        <div className="bg-[#FF6B00] rounded-[2rem] p-8 relative overflow-hidden text-white shadow-xl">
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
-          
-          <div className="relative z-10 flex flex-col justify-between h-full min-h-[180px]">
-             <div className="p-3 bg-black/10 w-fit rounded-xl backdrop-blur-md">
-                <Calendar size={24} className="text-white" />
-             </div>
-             
-             <div>
-               <p className="text-white/80 font-bold uppercase tracking-widest text-xs mb-1">Daily Limit</p>
-               <h2 className="text-4xl font-black tracking-tighter">₦ 5,300</h2>
-               <div className="mt-3 w-full bg-black/20 h-1.5 rounded-full overflow-hidden">
-                 <div className="h-full bg-white w-[40%]"></div>
-               </div>
-               <p className="text-[10px] font-bold uppercase tracking-wide mt-2 text-white/80">40% Spent Today</p>
-             </div>
-          </div>
-        </div>
       </div>
 
-      {/* 3. RECENT ACTIVITY & STATS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Transactions List */}
-        <div className="lg:col-span-2 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[2rem] p-6 md:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-black italic uppercase text-slate-900 dark:text-white">Recent Activity</h3>
-            <button className="text-xs font-bold text-[#FF6B00] uppercase tracking-wide hover:underline">View All</button>
-          </div>
+        <RecentActivity user={user} />
 
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-black/20 hover:bg-slate-100 dark:hover:bg-black/40 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center text-slate-400 group-hover:text-[#FF6B00] group-hover:scale-110 transition-all">
-                    <ShoppingBag size={18} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">Raw Mart Purchase</p>
-                    <p className="text-xs text-slate-500">2 items • Tuber of Yam, Rice</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-black text-slate-900 dark:text-white text-sm">- ₦ 4,500</p>
-                  <p className="text-xs text-slate-400">10:42 AM</p>
-                </div>
-              </div>
-            ))}
+        <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00]">
+              <TrendingUp size={20} />
+            </div>
+            <h3 className="text-sm font-black italic uppercase text-slate-900 dark:text-white">Insights</h3>
+          </div>
+          
+          <div className="space-y-6">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+              Your <span className="text-[#FF6B00] font-bold">{currentUnit.name}</span> protocol is active. 
+              {tier === 'family' 
+                ? " Manage your household members to distribute your shared allowance." 
+                : " Your daily limit is locked based on your worker status."}
+            </p>
+            
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1"> Status</p>
+              <p className="text-lg font-black text-green-500 italic uppercase">Optimized</p>
+            </div>
           </div>
         </div>
-
-        {/* Quick Stats */}
-        <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[2rem] p-6 md:p-8">
-           <h3 className="text-lg font-black italic uppercase text-slate-900 dark:text-white mb-6">Your Month</h3>
-           
-           <div className="space-y-6">
-              <div>
-                 <div className="flex justify-between text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">
-                    <span>Days Covered</span>
-                    <span className="text-slate-900 dark:text-white">12 / 30</span>
-                 </div>
-                 <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#FF6B00] w-[40%] rounded-full"></div>
-                 </div>
-              </div>
-
-              <div>
-                 <div className="flex justify-between text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">
-                    <span>Savings Goal</span>
-                    <span className="text-slate-900 dark:text-white">₦ 20k / 50k</span>
-                 </div>
-                 <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500 w-[60%] rounded-full"></div>
-                 </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#FF6B00]/10 border border-[#FF6B00]/20 mt-4">
-                 <div className="flex gap-3">
-                    <TrendingUp size={20} className="text-[#FF6B00]" />
-                    <div>
-                       <p className="text-xs font-bold text-[#FF6B00] uppercase tracking-wide">Insight</p>
-                       <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                          You are spending 15% less on raw food compared to last month. Keep it up!
-                       </p>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,20 +1,24 @@
-import Sidebar from "@/components/dashboard/SideBar";
+import SideBar from "@/components/dashboard/SideBar";
 import Header from "@/components/dashboard/Header";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] flex">
-      {/* Sidebar (Fixed) */}
-      <Sidebar />
+    <div className="min-h-screen flex bg-slate-50 dark:bg-[#050505] transition-colors duration-500 selection:bg-[#FF6B00] selection:text-white">
+      
+      {/* 1. THE SIDEBAR (Fixed on the left for Desktop) */}
+      <SideBar />
 
-      {/* Main Content Wrapper */}
-      <div className="flex-1 lg:ml-64 flex flex-col">
-        <Header />
+      {/* 2. THE MAIN CONTENT WRAPPER */}
+      <div className="flex-1 flex flex-col lg:ml-64 min-h-screen w-full transition-all duration-500">
         
-        {/* Dynamic Page Content */}
-        <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+        {/* 3. THE GLOBAL HEADER (Sticky at the top) */}
+        <Header />
+
+        {/* 4. THE PAGE CONTENT (Dashboard, Wallet, RawMart, etc. inject here) */}
+        <main className="flex-1 w-full max-w-7xl mx-auto p-6 lg:p-10 overflow-x-hidden">
           {children}
         </main>
+        
       </div>
     </div>
   );

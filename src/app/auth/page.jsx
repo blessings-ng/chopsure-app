@@ -7,14 +7,13 @@ export default function AuthSelectionPage() {
   return (
     <div className="h-screen w-full bg-[#050505] overflow-hidden relative font-sans selection:bg-[#FF6B00] selection:text-white">
       
-      {/* BRAND HEADER (Floating Top Left) */}
+      {/* BRAND HEADER */}
       <div className="absolute top-6 left-6 z-50 pointer-events-none">
          <span className="text-xl font-black italic tracking-tighter text-white uppercase drop-shadow-md">
             Chop<span className="text-[#FF6B00]">Sure</span>
          </span>
       </div>
 
-      {/* --- NEW BACK BUTTON (Floating Top Right) --- */}
       <Link 
         href="/" 
         className="absolute top-6 right-6 z-50 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-white hover:bg-[#FF6B00] hover:border-[#FF6B00] transition-all duration-300 group"
@@ -28,7 +27,7 @@ export default function AuthSelectionPage() {
           SECTION 1: INDIVIDUAL (Top/Left Diagonal)
          ========================================= */}
       <Link 
-        href="/auth/login"
+        href="/auth/signup"
         className="group absolute inset-0 w-full h-full z-20 bg-[#050505] hover:z-30 transition-all duration-500
         [clip-path:polygon(0_0,120%_0,-20%_100%)] 
         md:[clip-path:polygon(0_0,100%_0,0_100%)]
@@ -38,7 +37,7 @@ export default function AuthSelectionPage() {
         {/* Background Image */}
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop" 
+            src="/images/auth/signup-individual.avif"
             alt="Individual"
             className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
           />

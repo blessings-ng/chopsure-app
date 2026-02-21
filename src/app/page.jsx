@@ -1,10 +1,10 @@
 "use client";
-
+import Image from "next/image"; 
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ThemeToggle } from "@/components/ThemeToggle"; 
+import  ThemeToggle from "@/components/ThemeToggle"; 
 import { 
   ShieldCheck, Utensils, ShoppingBasket, MoveDown, Check, Truck, ChefHat, 
   X,
@@ -22,10 +22,11 @@ export default function LandingPage() {
   useEffect(() => setMounted(true), []);
 
   const slides = [
-    { image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80", title: "RESTAURANT" },
-    { image: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80", title: "GROCERY" },
-    { image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80", title: "CHEF" }
+    { image: "/images/landing/hero-image1.jfif", title: "RESTAURANT" },
+    { image: "/images/landing/hero-image2.jfif", title: "GROCERY" },
+    { image: "/images/auth/signup-individual.avif", title: "CHEF" }
   ];
+
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentSlide((p) => (p + 1) % slides.length), 5000);
@@ -34,26 +35,46 @@ export default function LandingPage() {
 
   if (!mounted) return null;
 
+  const getNextMonth = () => {
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const nextMonthIndex = (new Date().getMonth() + 1) % 12;
+  return months[nextMonthIndex];
+};
+
+const nextMonthName = getNextMonth();
+
   return (
     <div className="relative min-h-screen overflow-x-hidden selection:bg-[#10B981] selection:text-white font-sans transition-colors duration-300">
       
-      {/* 1. FIXED BACKGROUND SLIDESHOW */}
-      <div className="fixed inset-0 -z-10 w-full h-full bg-grey-900">
+      {/* FIXED BACKGROUND SLIDESHOW */}
+      <div className="fixed inset-0 -z-10 w-full h-full bg-black"> {/* Changed bg-grey-900 to bg-black for deeper contrast */}
         {slides.map((slide, index) => (
           <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? "opacity-100" : "opacity-0"}`}>
-            <img 
+            
+            {/* FIXED: Removed global opacity-60. Image is now full brightness. */}
+            <Image
               src={slide.image} 
-              className="w-full h-full object-cover opacity-60 dark:opacity-40 scale-105 animate-slow-pan" 
+              className="w-full h-full object-cover scale-105 animate-slow-pan" 
               alt={slide.title} 
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/40 to-slate-50/10 dark:from-[#050505] dark:via-[#050505]/60 dark:to-black/40" />
+              fill                         
+              priority={index === 0}
+            /> 
+            
+            {/* GRADIENT FIX 1: The "Floor" (Darkens bottom for text, keeps top clear) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent" />
+
+            {/* GRADIENT FIX 2: The "Ceiling" (Subtle darkening for Nav visibility) */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent h-32" />
           </div>
         ))}
       </div>
 
-      {/* 2. NAV */}
-      <nav className="fixed top-0 w-full z-50 h-24 flex items-center justify-between px-6 lg:px-20 border-b border-black/5 dark:border-white/5 backdrop-blur-md bg-white/10 dark:bg-black/20">
-        <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase group cursor-pointer">
+      {/* NAV */}
+      <nav className="fixed top-0 w-full z-50 h-24 flex items-center justify-between px-6 lg:px-20 border-b border-white/5 backdrop-blur-md bg-black/10"> {/* Removed white bg to keep it cinematic */}
+        <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md">
           ChopSure
         </span>
         
@@ -62,18 +83,16 @@ export default function LandingPage() {
           <ThemeToggle />
 
           <div className="hidden md:block">
-            {/* LINK TO LOGIN MODE */}
             <Link 
-              href="/auth?mode=login" 
-              className="text-slate-900 dark:text-white font-bold uppercase tracking-widest text-xs hover:text-[#10B981] transition-colors"
+              href="/auth/login" 
+              className="text-white font-bold uppercase tracking-widest text-xs hover:text-[#10B981] transition-colors drop-shadow-md"
             >
               Login
             </Link>
           </div>
 
-          {/* LINK TO SIGNUP MODE */}
           <Link 
-            href="/auth?mode=signup" 
+            href="/auth" 
             className="bg-[#FF6B00] text-white font-black px-6 md:px-8 py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-sm md:text-base"
           >
             Get Access
@@ -87,27 +106,28 @@ export default function LandingPage() {
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 md:px-6 pt-32 pb-20">
           <motion.div style={{ y: textY }} className="z-10 space-y-6 md:space-y-8 max-w-5xl">
             
-            <div className="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 border border-[#10B981] bg-[#10B981]/10 text-[#10B981] dark:text-[#10B981] text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 border border-[#10B981] bg-[#10B981]/10 text-[#10B981] text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] backdrop-blur-md">
               <ShieldCheck size={14} strokeWidth={4} /> Never Go Hungry
             </div>
             
-            <h1 className="text-[14vw] md:text-[8vw] font-black leading-[0.85] tracking-tighter uppercase italic drop-shadow-sm">
-              <span className="text-slate-900 dark:text-white transition-colors">SECURE YOUR</span> <br /> 
-              <span className="text-[#FF6B00]">FOOD BUDGET.</span>
+            {/* Added Drop Shadow to Text for better readability against bright images */}
+            <h1 className="text-[14vw] md:text-[8vw] font-black leading-[0.85] tracking-tighter uppercase italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+              <span className="text-white transition-colors">SECURE YOUR</span> <br /> 
+              <span className="text-[#FF6B00]">FOOD BUDGET</span>
             </h1>
 
-            <p className="text-lg md:text-3xl text-slate-700 dark:text-slate-200 max-w-3xl mx-auto font-black uppercase leading-tight italic">
-              "You provide the budget. <br className="hidden md:block"/> <span className="text-[#10B981] underline decoration-[#10B981]">We guarantee everyday food.</span>"
+            <p className="text-lg md:text-3xl text-slate-200 max-w-3xl mx-auto font-black uppercase leading-tight italic drop-shadow-md">
+              You provide the budget <br className="hidden md:block"/> <span className="text-[#10B981] decoration-[#10B981]">We guarantee everyday food</span>
             </p>
             
-            <p className="text-sm md:text-lg text-slate-600 dark:text-slate-300 font-medium max-w-xl mx-auto px-4">
-              Your first FMO for food. Lock your monthly allowance. Redeem guaranteed meals at partner restaurants daily.
+            <p className="text-sm md:text-lg text-slate-300 font-medium max-w-xl mx-auto px-4 drop-shadow-md">
+              Your first FMO. Lock your monthly allowance. Redeem guaranteed meals at partner restaurants daily
             </p>
 
             <div className="pt-8 flex flex-wrap justify-center gap-6">
               {/* HERO CTA LINK */}
               <Link 
-                href="/auth?mode=signup" 
+                href="/auth" 
                 className="inline-flex items-center justify-center h-14 md:h-16 px-10 md:px-12 bg-[#FF6B00] text-white font-black uppercase italic tracking-tighter hover:bg-[#10B981] hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,107,0,0.3)] text-sm md:text-base rounded-lg"
               >
                 Secure My Month
@@ -115,17 +135,17 @@ export default function LandingPage() {
             </div>
           </motion.div>
           
-          <div className="absolute bottom-10 animate-bounce text-slate-900 dark:text-white/50">
+          <div className="absolute bottom-10 animate-bounce text-white/50">
             <MoveDown size={24} className="md:w-8 md:h-8" />
           </div>
         </section>
 
-        {/* 4. PARTNER MARQUEE */}
+        {/* PARTNER MARQUEE */}
         <div className="py-4 md:py-4 bg-[#FF6B00] overflow-hidden -rotate-2 scale-135 border-y-5 border-black dark:border-black relative z-20 shadow-xl">
           <div className="flex gap-12 animate-marquee whitespace-nowrap">
             {[...Array(10)].map((_, i) => (
               <span key={i} className="text-2xl md:text-4xl font-black italic text-black uppercase tracking-tighter flex items-center gap-4">
-                  Dominos <span className="text-white">★</span> item7 <span className="text-white">★</span> Chicken republic <span className="text-white">★</span> JazzyBurger <span className="text-white">★</span>
+                  Dominos <span className="text-white">★</span> Kilimanjaro <span className="text-white">★</span> Chicken Republic <span className="text-white">★</span> JazzyBurger <span className="text-white">★</span>
               </span>
             ))}
           </div>
@@ -157,7 +177,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto space-y-16 md:space-y-20">
             <div className="text-center space-y-4">
               <h2 className="text-4xl md:text-8xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white">
-                YOUR BELLY <br /> <span className="text-[#FF6B00]">SECURED</span>
+                YOUR BELLY <span className="text-[#FF6B00]">SECURED</span>
               </h2>
               <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] text-xs md:text-sm">Select your consumption mode</p>
             </div>
@@ -204,14 +224,14 @@ export default function LandingPage() {
             
             <div className="text-center space-y-8">
               <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white leading-none">
-                CHOOSE YOUR <span className="text-[#FF6B00]">PATH.</span>
+                CHOOSE YOUR <span className="text-[#FF6B00]">PATH</span>
               </h2>
               
               {/* THE TOGGLE (Business vs Individual) */}
               <div className="inline-flex p-2 bg-slate-100 dark:bg-[#111] rounded-full border border-slate-200 dark:border-white/10">
                 <button 
                   onClick={() => setActiveTab("personal")}
-                  className={`px-8 py-3 rounded-full text-xs md:text-sm font-black uppercase tracking-widest transition-all ${activeTab === "personal" ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                  className={`px-8 py-3 rounded-full text-xs md:text-sm font-black uppercase tracking-widest transition-all ${activeTab === "company" ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                 >
                   For Individuals
                 </button>
@@ -293,17 +313,17 @@ export default function LandingPage() {
                     
                     {/* Visual for Company */}
                     <div className="h-full min-h-[300px] bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center relative">
-                       <ShieldCheck size={120} className="text-[#FF6B00] opacity-50" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
-                       <div className="absolute bottom-8 left-8 right-8">
-                         <div className="flex justify-between items-center text-sm font-bold uppercase text-slate-500 mb-2">
-                           <span>Staff Funded</span>
-                           <span className="text-[#10B981]">1,240 / 1,240</span>
-                         </div>
-                         <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                           <div className="h-full w-full bg-[#10B981]"></div>
-                         </div>
-                       </div>
+                        <ShieldCheck size={120} className="text-[#FF6B00] opacity-50" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+                        <div className="absolute bottom-8 left-8 right-8">
+                          <div className="flex justify-between items-center text-sm font-bold uppercase text-slate-500 mb-2">
+                            <span>Staff Funded</span>
+                            <span className="text-[#10B981]">1,240 / 1,240</span>
+                          </div>
+                          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full w-full bg-[#10B981]"></div>
+                          </div>
+                        </div>
                     </div>
                   </div>
                 </motion.div>
@@ -313,26 +333,26 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 8. FINAL CTA */}
-        <section className="py-20 md:py-32 px-4 md:px-6 relative z-10">
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="max-w-7xl mx-auto bg-[#FF6B00] p-12 md:p-24 text-center relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl cursor-pointer"
-          >
-             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-             <h2 className="text-5xl md:text-9xl font-black italic uppercase tracking-tighter text-black relative z-10 leading-[0.8] group-hover:scale-105 transition-transform duration-500">
-               DON'T STARVE <br/> IN MARCH.
-             </h2>
-             <div className="mt-8 md:mt-12 flex justify-center relative z-10">
-               <Link 
-                 href="/auth?mode=signup" 
-                 className="inline-flex items-center justify-center h-16 md:h-20 px-10 md:px-16 bg-black text-white font-black uppercase italic tracking-tighter text-lg md:text-xl hover:bg-[#10B981] hover:text-black transition-colors border border-white/10 rounded-lg"
-               >
-                 Secure Next Month Now
-               </Link>
-             </div>
-          </motion.div>
-        </section>
+       {/* 8. FINAL CTA */}
+<section className="py-20 md:py-32 px-4 md:px-6 relative z-10">
+  <motion.div 
+    whileHover={{ scale: 1.02 }}
+    className="max-w-7xl mx-auto bg-[#FF6B00] p-12 md:p-24 text-center relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl cursor-pointer"
+  >
+     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+     <h2 className="text-5xl md:text-9xl font-black italic uppercase tracking-tighter text-black relative z-10 leading-[0.8] group-hover:scale-105 transition-transform duration-500">
+       DON'T STARVE <br/> IN {nextMonthName.toUpperCase()}
+     </h2>
+     <div className="mt-8 md:mt-12 flex justify-center relative z-10">
+       <Link 
+         href="/auth?mode=signup" 
+         className="inline-flex items-center justify-center h-16 md:h-20 px-10 md:px-16 bg-black text-white font-black uppercase italic tracking-tighter text-lg md:text-xl hover:bg-[#10B981] hover:text-black transition-colors border border-white/10 rounded-lg"
+       >
+         Secure {nextMonthName} Now
+       </Link>
+     </div>
+  </motion.div>
+</section>
 
       </main>
 

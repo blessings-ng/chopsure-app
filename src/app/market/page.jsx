@@ -5,16 +5,15 @@ import { PRODUCTS, CATEGORIES } from "@/data/raw-food";
 import Header from "@/components/market/Header";
 import ProductCard from "@/components/market/ProductCard";
 import CartSidebar from "@/components/market/CartSidebar";
+import { ShoppingBag } from "lucide-react"; 
 
 export default function MiniMartPage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  
   const [cart, setCart] = useState({}); 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const addToCart = (id) => setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-  
   const removeFromCart = (id) => {
     setCart(prev => {
       const newCart = { ...prev };
@@ -23,7 +22,6 @@ export default function MiniMartPage() {
       return newCart;
     });
   };
-
   const deleteItem = (id) => {
     setCart(prev => {
       const newCart = { ...prev };
@@ -38,12 +36,10 @@ export default function MiniMartPage() {
     return matchesCategory && matchesSearch;
   });
 
-  // Calculate cart count safely
   const cartCount = cart ? Object.values(cart).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] font-sans transition-colors duration-500">
-      
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] font-sans">
       <Header 
         searchQuery={searchQuery} 
         setSearchQuery={setSearchQuery} 
@@ -52,33 +48,40 @@ export default function MiniMartPage() {
       />
 
       <div className="flex">
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto h-[calc(100vh-80px)]">
+        {/* The main content scrolls, but the Header (sticky) and Sidebar (fixed) stay put */}
+        <main className="flex-1 p-6 md:p-8">
           
-          {/* Categories Tab */}
+          {/* Categories Tab - NOT sticky. It will scroll under the solid header */}
           <div className="flex gap-2 overflow-x-auto pb-6 scrollbar-hide">
             {CATEGORIES.map(cat => (
               <button 
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wide whitespace-nowrap border transition-all ${activeCategory === cat ? 'bg-[#FF6B00] border-[#FF6B00] text-white shadow-lg' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'}`}
+                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest border transition-all ${activeCategory === cat ? 'bg-[#FF6B00] border-[#FF6B00] text-white' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'}`}
               >
                 {cat}
               </button>
             ))}
           </div>
 
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                qty={cart ? (cart[product.id] || 0) : 0}
-                addToCart={addToCart}
-                removeFromCart={removeFromCart}
-              />
-            ))}
-          </div>
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {filteredProducts.map(product => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  qty={cart ? (cart[product.id] || 0) : 0}
+                  addToCart={addToCart}
+                  removeFromCart={removeFromCart}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="h-[50vh] flex flex-col items-center justify-center text-slate-400">
+              <ShoppingBag size={48} className="mb-4 opacity-20" />
+              <p className="font-black uppercase tracking-widest text-[10px]">No Items Found</p>
+            </div>
+          )}
         </main>
 
         <CartSidebar 

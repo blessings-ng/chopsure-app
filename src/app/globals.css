@@ -1,30 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  /* Branding: Solar Slate */
-  --color-primary: hsl(25 100% 50%);         /* Hustle Orange */
-  --color-primary-foreground: hsl(0 0% 100%);
-  
-  --color-background: hsl(0 0% 98%);         /* Pearl White */
-  --color-foreground: hsl(222 47% 11%);      /* Deep Slate */
-
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222 47% 11%);
-
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  
-  /* UX: Premium Rounded Corners */
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  /* This tells Tailwind to use your custom dark color */
+  --color-background: #f8fafc; /* light mode slate-50 */
+  --color-foreground: #0f172a;
 }
 
-/* Base Styles */
-@layer base {
-  * {
-    @apply border-[var(--color-border)];
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
-  }
+/* This is the magic bridge between next-themes and Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  background-color: transparent;
+  color: #0f172a;
+}
+
+/* Force the background to change when the .dark class is present */
+.dark {
+  /* background-color: #050505 !important; */
+  color: #ffffff;
+}
+
+/* Ensure Tailwind's utility classes actually work */
+body {
+  background-color: inherit;
+  color: inherit;
 }

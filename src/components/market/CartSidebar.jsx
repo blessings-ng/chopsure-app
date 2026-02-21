@@ -1,14 +1,73 @@
-import { ArrowLeft, ShoppingCart, Trash2, Plus, Minus } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { ArrowLeft, ShoppingCart, Trash2, Plus, Minus, Loader2 } from "lucide-react";
 import { PRODUCTS } from "@/data/raw-food";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, removeFromCart, deleteItem }) {
-  
+  const supabase = createClient();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   // FIXED: Added (cart || {}) to prevent crash if cart is undefined
   const cartTotal = Object.entries(cart || {}).reduce((total, [id, qty]) => {
     const product = PRODUCTS.find(p => p.id === parseInt(id));
     // Safety check: if product not found, return current total
     return product ? total + (product.price * qty) : total;
   }, 0);
+
+  const handleCheckout = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Auth session expired");
+
+      // 1. Fetch current wallet balance
+      const { data: wallet, error: walletError } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", user.id)
+        .single();
+
+      if (walletError || !wallet) throw new Error("Wallet not found");
+
+      // 2. Fund Validation
+      if (wallet.balance < cartTotal) {
+        alert(`Insufficient Funds. Need ₦${cartTotal.toLocaleString()}, have ₦${wallet.balance.toLocaleString()}`);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Deduct Balance
+      const { error: updateError } = await supabase
+        .from("wallets")
+        .update({ balance: wallet.balance - cartTotal })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      // 4. Record Transaction
+      await supabase.from("transactions").insert({
+        user_id: user.id,
+        amount: cartTotal,
+        category: "debit",
+        description: "RawMart Purchase",
+        status: "success",
+        reference: `RMART-${Math.random().toString(36).toUpperCase().slice(2, 9)}`
+      });
+
+      // 5. Success Redirect
+      setIsOpen(false);
+      // Changed to purchase_success to distinguish from other dashboard alerts
+      router.push("/dashboard?status=purchase_success"); 
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -23,7 +82,6 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-            {/* FIXED: Check if cart exists and has keys */}
             {(!cart || Object.keys(cart).length === 0) ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
                 <ShoppingCart size={48} className="mb-4 text-slate-300 dark:text-slate-700" />
@@ -35,7 +93,7 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
                 if (!product) return null; // Safety check
                 return (
                   <div key={id} className="flex gap-4 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
-                    <img src={product.image} className="w-16 h-16 rounded-lg object-cover bg-white" />
+                    <img src={product.image} className="w-16 h-16 rounded-lg object-cover bg-white" alt={product.name} />
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{product.name}</h4>
                       <p className="text-xs text-[#FF6B00] font-black mt-1">₦{product.price.toLocaleString()}</p>
@@ -58,7 +116,13 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
                 <span className="text-sm font-medium text-slate-500">Subtotal</span>
                 <span className="text-xl font-black text-slate-900 dark:text-white">₦{cartTotal.toLocaleString()}</span>
               </div>
-              <button className="w-full h-14 bg-[#FF6B00] text-white font-black uppercase italic tracking-wider rounded-xl hover:bg-black dark:hover:bg-white dark:hover:text-black transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]">Checkout Now</button>
+              <button 
+                onClick={handleCheckout}
+                disabled={loading}
+                className="w-full h-14 bg-[#FF6B00] text-white font-black uppercase italic tracking-wider rounded-xl hover:bg-black dark:hover:bg-white dark:hover:text-black transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98] flex items-center justify-center"
+              >
+                {loading ? <Loader2 className="animate-spin" /> : "Checkout Now"}
+              </button>
             </div>
           )}
         </div>

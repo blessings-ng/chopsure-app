@@ -1,29 +1,16 @@
-import { Plus, ArrowUpRight, ArrowDownLeft, Settings } from "lucide-react";
+// src/components/wallet/QuickActions.jsx
+import { Plus, Send } from "lucide-react";
+import Link from "next/link";
 
 export default function QuickActions() {
-  const actions = [
-    { label: "Top Up", icon: Plus, color: "bg-[#FF6B00] text-white" },
-    { label: "Withdraw", icon: ArrowUpRight, color: "bg-white dark:bg-white/5 text-slate-900 dark:text-white" },
-    { label: "Transfer", icon: ArrowDownLeft, color: "bg-white dark:bg-white/5 text-slate-900 dark:text-white" },
-    { label: "Manage", icon: Settings, color: "bg-white dark:bg-white/5 text-slate-900 dark:text-white" },
-  ];
-
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {actions.map((action) => (
-        <button 
-          key={action.label}
-          className={`
-            ${action.color} flex flex-col items-center justify-center gap-3 py-6 rounded-2xl font-bold text-xs uppercase tracking-wider 
-            shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-transparent dark:border-white/5
-          `}
-        >
-          <div className="p-2 rounded-full bg-black/10 dark:bg-white/10">
-            <action.icon size={20} />
-          </div>
-          {action.label}
-        </button>
-      ))}
+    <div className="grid grid-cols-2 gap-4 mt-8">
+      <Link href="/top-up" className="h-16 bg-white dark:bg-white text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all shadow-xl">
+        <Plus size={18} strokeWidth={3} /> Top Up
+      </Link>
+      <Link href="/wallet/transfer" className="h-16 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white rounded-2xl flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest hover:bg-[#FF6B00] hover:text-white transition-all">
+        <Send size={18} /> Transfer
+      </Link>
     </div>
   );
 }
