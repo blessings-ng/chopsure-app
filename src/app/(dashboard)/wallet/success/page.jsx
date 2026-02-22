@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense } from "react"; // 1. Added Suspense
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ShieldCheck, ArrowRight, Download, Share2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
-// Move all the logic into a separate component
+// 1. This component handles the logic and UI
 function SuccessContent() {
   const searchParams = useSearchParams();
   const status = searchParams.get("status");
@@ -20,7 +20,7 @@ function SuccessContent() {
   return (
     <div className="min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-6 text-center">
       
-      {/* 1. SUCCESS ANIMATION */}
+      {/* SUCCESS ANIMATION */}
       <motion.div 
         initial={{ scale: 0, rotate: -20 }}
         animate={{ scale: 1, rotate: 0 }}
@@ -30,7 +30,7 @@ function SuccessContent() {
         <ShieldCheck size={60} className="text-white" strokeWidth={2.5} />
       </motion.div>
 
-      {/* 2. TEXT CONTENT */}
+      {/* TEXT CONTENT */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -45,7 +45,7 @@ function SuccessContent() {
         </p>
       </motion.div>
 
-      {/* 3. QUICK ACTIONS */}
+      {/* QUICK ACTIONS */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -62,7 +62,7 @@ function SuccessContent() {
         </button>
       </motion.div>
 
-      {/* 4. PRIMARY RETURN BUTTON */}
+      {/* PRIMARY RETURN BUTTON */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -85,10 +85,10 @@ function SuccessContent() {
   );
 }
 
-// 2. Export with Suspense wrapper
+// 2. The default export MUST wrap the content in Suspense
 export default function SuccessPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white font-black uppercase tracking-widest text-[10px]">Verifying Transaction...</div>}>
       <SuccessContent />
     </Suspense>
   );
