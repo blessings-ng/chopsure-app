@@ -1,16 +1,17 @@
 "use client";
 import Image from "next/image"; 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react"; // Added Suspense
 import { useTheme } from "next-themes";
 import { motion, useScroll, useTransform } from "framer-motion";
-import  ThemeToggle from "@/components/ThemeToggle"; 
+import ThemeToggle from "@/components/ThemeToggle"; 
 import { 
   ShieldCheck, Utensils, ShoppingBasket, MoveDown, Check, Truck, ChefHat, 
   X,
 } from "lucide-react";
 
-export default function LandingPage() {
+// 1. Separate the content into a sub-component
+function LandingContent() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("personal");
@@ -27,61 +28,52 @@ export default function LandingPage() {
     { image: "/images/auth/signup-individual.avif", title: "CHEF" }
   ];
 
-
   useEffect(() => {
     const timer = setInterval(() => setCurrentSlide((p) => (p + 1) % slides.length), 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   if (!mounted) return null;
 
   const getNextMonth = () => {
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  const nextMonthIndex = (new Date().getMonth() + 1) % 12;
-  return months[nextMonthIndex];
-};
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const nextMonthIndex = (new Date().getMonth() + 1) % 12;
+    return months[nextMonthIndex];
+  };
 
-const nextMonthName = getNextMonth();
+  const nextMonthName = getNextMonth();
 
   return (
     <div className="relative min-h-screen overflow-x-hidden selection:bg-[#10B981] selection:text-white font-sans transition-colors duration-300">
       
       {/* FIXED BACKGROUND SLIDESHOW */}
-      <div className="fixed inset-0 -z-10 w-full h-full bg-black"> {/* Changed bg-grey-900 to bg-black for deeper contrast */}
+      <div className="fixed inset-0 -z-10 w-full h-full bg-black">
         {slides.map((slide, index) => (
           <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? "opacity-100" : "opacity-0"}`}>
-            
-            {/* FIXED: Removed global opacity-60. Image is now full brightness. */}
             <Image
               src={slide.image} 
               className="w-full h-full object-cover scale-105 animate-slow-pan" 
               alt={slide.title} 
-              fill                         
+              fill                                     
               priority={index === 0}
             /> 
-            
-            {/* GRADIENT FIX 1: The "Floor" (Darkens bottom for text, keeps top clear) */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent" />
-
-            {/* GRADIENT FIX 2: The "Ceiling" (Subtle darkening for Nav visibility) */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent h-32" />
           </div>
         ))}
       </div>
 
       {/* NAV */}
-      <nav className="fixed top-0 w-full z-50 h-24 flex items-center justify-between px-6 lg:px-20 border-b border-white/5 backdrop-blur-md bg-black/10"> {/* Removed white bg to keep it cinematic */}
+      <nav className="fixed top-0 w-full z-50 h-24 flex items-center justify-between px-6 lg:px-20 border-b border-white/5 backdrop-blur-md bg-black/10">
         <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md">
           ChopSure
         </span>
         
         <div className="flex items-center gap-4 md:gap-6">
-          {/* THEME TOGGLE */}
           <ThemeToggle />
-
           <div className="hidden md:block">
             <Link 
               href="/auth/login" 
@@ -90,7 +82,6 @@ const nextMonthName = getNextMonth();
               Login
             </Link>
           </div>
-
           <Link 
             href="/auth" 
             className="bg-[#FF6B00] text-white font-black px-6 md:px-8 py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-sm md:text-base"
@@ -101,31 +92,23 @@ const nextMonthName = getNextMonth();
       </nav>
 
       <main>
-        
-        {/* 3. HERO SECTION */}
+        {/* HERO SECTION */}
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 md:px-6 pt-32 pb-20">
           <motion.div style={{ y: textY }} className="z-10 space-y-6 md:space-y-8 max-w-5xl">
-            
             <div className="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 border border-[#10B981] bg-[#10B981]/10 text-[#10B981] text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] backdrop-blur-md">
               <ShieldCheck size={14} strokeWidth={4} /> Never Go Hungry
             </div>
-            
-            {/* Added Drop Shadow to Text for better readability against bright images */}
             <h1 className="text-[14vw] md:text-[8vw] font-black leading-[0.85] tracking-tighter uppercase italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
               <span className="text-white transition-colors">SECURE YOUR</span> <br /> 
               <span className="text-[#FF6B00]">FOOD BUDGET</span>
             </h1>
-
             <p className="text-lg md:text-3xl text-slate-200 max-w-3xl mx-auto font-black uppercase leading-tight italic drop-shadow-md">
               You provide the budget <br className="hidden md:block"/> <span className="text-[#10B981] decoration-[#10B981]">We guarantee everyday food</span>
             </p>
-            
             <p className="text-sm md:text-lg text-slate-300 font-medium max-w-xl mx-auto px-4 drop-shadow-md">
               Your first FMO. Lock your monthly allowance. Redeem guaranteed meals at partner restaurants daily
             </p>
-
             <div className="pt-8 flex flex-wrap justify-center gap-6">
-              {/* HERO CTA LINK */}
               <Link 
                 href="/auth" 
                 className="inline-flex items-center justify-center h-14 md:h-16 px-10 md:px-12 bg-[#FF6B00] text-white font-black uppercase italic tracking-tighter hover:bg-[#10B981] hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,107,0,0.3)] text-sm md:text-base rounded-lg"
@@ -134,7 +117,6 @@ const nextMonthName = getNextMonth();
               </Link>
             </div>
           </motion.div>
-          
           <div className="absolute bottom-10 animate-bounce text-white/50">
             <MoveDown size={24} className="md:w-8 md:h-8" />
           </div>
@@ -151,7 +133,7 @@ const nextMonthName = getNextMonth();
           </div>
         </div>
 
-        {/* 5. COMPARISON SECTION */}
+        {/* COMPARISON SECTION */}
         <section className="py-20 md:py-32 px-6 bg-white dark:bg-[#050505] transition-colors duration-300 relative z-10">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6 md:space-y-8">
@@ -172,7 +154,7 @@ const nextMonthName = getNextMonth();
           </div>
         </section>
 
-        {/* 6. LIFESTYLE SECTION */}
+        {/* LIFESTYLE SECTION */}
         <section className="py-20 md:py-32 px-6 bg-slate-50 dark:bg-[#0A0A0A] transition-colors duration-300 relative z-10">
           <div className="max-w-7xl mx-auto space-y-16 md:space-y-20">
             <div className="text-center space-y-4">
@@ -183,7 +165,6 @@ const nextMonthName = getNextMonth();
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* COOKED MODE */}
               <div className="group relative h-[500px] md:h-[600px] border-4 border-[#FF6B00] bg-white dark:bg-[#111] overflow-hidden rounded-[2rem] hover:shadow-2xl hover:shadow-[#FF6B00]/40 transition-all duration-500 cursor-default">
                 <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80" className="absolute inset-0 w-full h-full object-cover opacity-80 dark:opacity-60 group-hover:scale-110 transition-transform duration-700 ease-out" alt=""/>
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent p-8 md:p-10 flex flex-col justify-end">
@@ -199,7 +180,6 @@ const nextMonthName = getNextMonth();
                 </div>
               </div>
 
-              {/* RAW MODE */}
               <div className="group relative h-[500px] md:h-[600px] border-4 border-[#10B981] bg-white dark:bg-[#111] overflow-hidden rounded-[2rem] hover:shadow-2xl hover:shadow-[#10B981]/40 transition-all duration-500 cursor-default">
                 <div className="absolute top-6 right-6 bg-[#10B981] text-black text-[10px] md:text-xs font-black px-4 py-2 uppercase z-10 animate-pulse">Window: 10th-14th</div>
                 <img src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80" className="absolute inset-0 w-full h-full object-cover opacity-80 dark:opacity-60 group-hover:scale-110 transition-transform duration-700 ease-out" alt=""/>
@@ -218,20 +198,17 @@ const nextMonthName = getNextMonth();
           </div>
         </section>
 
-       {/* 7. CHOOSE YOUR PATH (Fixed Hierarchy) */}
+        {/* CHOOSE YOUR PATH */}
         <section className="py-20 md:py-32 px-6 bg-white dark:bg-[#050505] transition-colors duration-300 relative z-10">
           <div className="max-w-7xl mx-auto space-y-12">
-            
             <div className="text-center space-y-8">
               <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white leading-none">
                 CHOOSE YOUR <span className="text-[#FF6B00]">PATH</span>
               </h2>
-              
-              {/* THE TOGGLE (Business vs Individual) */}
               <div className="inline-flex p-2 bg-slate-100 dark:bg-[#111] rounded-full border border-slate-200 dark:border-white/10">
                 <button 
                   onClick={() => setActiveTab("personal")}
-                  className={`px-8 py-3 rounded-full text-xs md:text-sm font-black uppercase tracking-widest transition-all ${activeTab === "company" ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                  className={`px-8 py-3 rounded-full text-xs md:text-sm font-black uppercase tracking-widest transition-all ${activeTab === "personal" ? 'bg-[#FF6B00] text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                 >
                   For Individuals
                 </button>
@@ -244,24 +221,18 @@ const nextMonthName = getNextMonth();
               </div>
             </div>
 
-            {/* CONTENT SWITCHER */}
             <div className="min-h-[500px]">
-              
-              {/* VIEW 1: INDIVIDUALS (The 3 Specific Types) */}
               {activeTab === "personal" && (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 >
-                  {/* 1. REGULAR (The Daily Hustler) */}
                   <PlanCard 
                     title="THE REGULAR" 
                     subtitle="Daily Survival"
                     desc="For the freelancer or creative. Secure your daily bread and automate your feeding." 
                     icon={<Utensils/>} 
                   />
-                  
-                  {/* 2. WORKER (The 9-5 Salaried) */}
                   <PlanCard 
                     title="THE WORKER" 
                     subtitle="Salary Protection"
@@ -269,8 +240,6 @@ const nextMonthName = getNextMonth();
                     active 
                     icon={<ShieldCheck/>} 
                   />
-                  
-                  {/* 3. FAMILY (Dependents) */}
                   <PlanCard 
                     title="THE FAMILY" 
                     subtitle="Household Care"
@@ -280,15 +249,12 @@ const nextMonthName = getNextMonth();
                 </motion.div>
               )}
 
-              {/* VIEW 2: COMPANY (The Corporate Vault) */}
               {activeTab === "company" && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="bg-slate-900 text-white rounded-[3rem] p-12 md:p-20 relative overflow-hidden border border-white/10"
                 >
-                  {/* Background Decor */}
                   <div className="absolute right-0 top-0 w-1/2 h-full bg-[#FF6B00]/10 skew-x-12 blur-3xl"></div>
-                  
                   <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div className="space-y-8">
                       <div className="inline-block px-4 py-2 bg-[#FF6B00] text-black text-xs font-black uppercase tracking-widest rounded-lg">B2B Solution</div>
@@ -310,8 +276,6 @@ const nextMonthName = getNextMonth();
                         Deploy Company Vault
                       </Link>
                     </div>
-                    
-                    {/* Visual for Company */}
                     <div className="h-full min-h-[300px] bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center relative">
                         <ShieldCheck size={120} className="text-[#FF6B00] opacity-50" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
@@ -328,31 +292,30 @@ const nextMonthName = getNextMonth();
                   </div>
                 </motion.div>
               )}
-
             </div>
           </div>
         </section>
 
-       {/* 8. FINAL CTA */}
-<section className="py-20 md:py-32 px-4 md:px-6 relative z-10">
-  <motion.div 
-    whileHover={{ scale: 1.02 }}
-    className="max-w-7xl mx-auto bg-[#FF6B00] p-12 md:p-24 text-center relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl cursor-pointer"
-  >
-     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-     <h2 className="text-5xl md:text-9xl font-black italic uppercase tracking-tighter text-black relative z-10 leading-[0.8] group-hover:scale-105 transition-transform duration-500">
-       DON'T STARVE <br/> IN {nextMonthName.toUpperCase()}
-     </h2>
-     <div className="mt-8 md:mt-12 flex justify-center relative z-10">
-       <Link 
-         href="/auth?mode=signup" 
-         className="inline-flex items-center justify-center h-16 md:h-20 px-10 md:px-16 bg-black text-white font-black uppercase italic tracking-tighter text-lg md:text-xl hover:bg-[#10B981] hover:text-black transition-colors border border-white/10 rounded-lg"
-       >
-         Secure {nextMonthName} Now
-       </Link>
-     </div>
-  </motion.div>
-</section>
+        {/* FINAL CTA */}
+        <section className="py-20 md:py-32 px-4 md:px-6 relative z-10">
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            className="max-w-7xl mx-auto bg-[#FF6B00] p-12 md:p-24 text-center relative overflow-hidden rounded-[2rem] md:rounded-[3rem] shadow-2xl cursor-pointer"
+          >
+             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+             <h2 className="text-5xl md:text-9xl font-black italic uppercase tracking-tighter text-black relative z-10 leading-[0.8]">
+               DON'T STARVE <br/> IN {nextMonthName.toUpperCase()}
+             </h2>
+             <div className="mt-8 md:mt-12 flex justify-center relative z-10">
+               <Link 
+                 href="/auth?mode=signup" 
+                 className="inline-flex items-center justify-center h-16 md:h-20 px-10 md:px-16 bg-black text-white font-black uppercase italic tracking-tighter text-lg md:text-xl hover:bg-[#10B981] hover:text-black transition-colors border border-white/10 rounded-lg"
+               >
+                 Secure {nextMonthName} Now
+               </Link>
+             </div>
+          </motion.div>
+        </section>
 
       </main>
 
@@ -366,6 +329,15 @@ const nextMonthName = getNextMonth();
   );
 }
 
+// 2. The Main Page with the invisible Vercel-Fix wrapper
+export default function LandingPage() {
+  return (
+    <Suspense fallback={null}>
+      <LandingContent />
+    </Suspense>
+  );
+}
+
 function PlanCard({ title, subtitle, desc, active, icon }) {
   return (
     <motion.div 
@@ -376,7 +348,7 @@ function PlanCard({ title, subtitle, desc, active, icon }) {
         <div className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center text-2xl rounded-2xl ${active ? 'bg-[#FF6B00] text-black' : 'bg-white dark:bg-white/10 text-slate-900 dark:text-white'}`}>{icon}</div>
         <div>
           <h3 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{title}</h3>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#10B981] mt-2">{subtitle}</p> {/* NEW SUBTITLE */}
+          <p className="text-xs font-bold uppercase tracking-widest text-[#10B981] mt-2">{subtitle}</p>
         </div>
         <p className="text-slate-600 dark:text-slate-400 font-medium text-base md:text-lg leading-relaxed">{desc}</p>
       </div>
