@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react"; // Added Suspense
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,6 +10,7 @@ import VaultCard from "@/components/dashboard/VaultCard";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import Skeleton from "@/components/dashboard/Skeleton";
 
+// Floating Success Notice Component
 const SuccessNotice = ({ show, onClose }) => (
   <AnimatePresence>
     {show && (
@@ -36,7 +37,8 @@ const SuccessNotice = ({ show, onClose }) => (
   </AnimatePresence>
 );
 
-export default function DashboardPage() {
+// We wrap the content in a sub-component to safely use useSearchParams() with Next.js Suspense
+function DashboardContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,7 +68,7 @@ export default function DashboardPage() {
       if (wallet) {
         setAllowanceData({
           remaining: wallet.daily_allowance || 0,
-          total: wallet.total_limit || 1 // Avoid division by zero
+          total: wallet.total_limit || 1 
         });
       }
       
@@ -82,6 +84,7 @@ export default function DashboardPage() {
     }
   }, [router, supabase, searchParams]);
 
+  // FIX: Safety check for tier and unitConfig
   const tier = user?.user_metadata?.subscription_tier || "regular";
   
   const unitConfig = {
@@ -90,9 +93,9 @@ export default function DashboardPage() {
     family: { name: "Family Unit", icon: <Users size={14} className="text-purple-500" />, theme: "text-purple-500 border-purple-500" }
   };
 
-  const currentUnit = unitConfig[tier];
+  // FIX: Added fallback to unitConfig.regular to prevent 'undefined' crashes
+  const currentUnit = unitConfig[tier] || unitConfig.regular;
   
-  // Calculate percentage for the progress bar
   const allowancePercentage = (allowanceData.remaining / allowanceData.total) * 100;
 
   if (loading) {
@@ -121,8 +124,9 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-white/5 ${currentUnit.theme}`}>
-              {currentUnit.icon} {currentUnit.name}
+            {/* Guarded access to currentUnit.theme */}
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-white/5 ${currentUnit?.theme}`}>
+              {currentUnit?.icon} {currentUnit?.name}
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white">
@@ -134,7 +138,7 @@ export default function DashboardPage() {
           <Link href="/top-up" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-[#FF6B00] hover:text-black hover:border-[#FF6B00] transition-all">
             Top Up
           </Link>
-          <Link href="/subscription" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-[#FF6B00] text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-[0_15px_30_rgba(255,107,0,0.4)] hover:scale-105 transition-all">
+          <Link href="/subscription" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-[#FF6B00] text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-[0_15px_30px_rgba(255,107,0,0.4)] hover:scale-105 transition-all">
             Subscription
           </Link>
         </div>
@@ -185,7 +189,7 @@ export default function DashboardPage() {
           
           <div className="space-y-6">
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              Your <span className="text-[#FF6B00] font-bold">{currentUnit.name}</span> protocol is active. 
+              Your <span className="text-[#FF6B00] font-bold">{currentUnit?.name}</span> protocol is active. 
               {tier === 'family' 
                 ? " Manage your household members to distribute your shared allowance." 
                 : " Your daily limit is locked based on your worker status."}
@@ -199,5 +203,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-screen w-full" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

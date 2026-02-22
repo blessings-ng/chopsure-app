@@ -11,9 +11,8 @@ export default function SuccessPage() {
   const router = useRouter();
   const status = searchParams.get("status");
   
-  // Dynamic content based on where the user came from
   const isFunding = status === "funded";
-  const title = isFunding ? "CAPITAL SECURED" : "PAYMENT COMPLETE";
+  const title = isFunding ? "P SECURED" : "PAYMENT COMPLETE";
   const subtitle = isFunding 
     ? "Your vault has been successfully injected with new capital." 
     : "Transaction authorized. The vendor has been credited.";
