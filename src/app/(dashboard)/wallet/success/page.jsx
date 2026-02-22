@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense } from "react"; // 1. Added Suspense
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ShieldCheck, ArrowRight, Download, Share2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
-export default function SuccessPage() {
+// Move all the logic into a separate component
+function SuccessContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const status = searchParams.get("status");
   
   const isFunding = status === "funded";
@@ -45,7 +45,7 @@ export default function SuccessPage() {
         </p>
       </motion.div>
 
-      {/* 3. QUICK ACTIONS (Industrial Style) */}
+      {/* 3. QUICK ACTIONS */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -77,11 +77,19 @@ export default function SuccessPage() {
         </Link>
       </motion.div>
 
-      {/* FOOTER BADGE */}
       <div className="mt-12 flex items-center gap-2 opacity-30">
         <CheckCircle2 size={12} className="text-[#10B981]" />
         <span className="text-[8px] font-black uppercase tracking-widest dark:text-white">Payment Successful</span>
       </div>
     </div>
+  );
+}
+
+// 2. Export with Suspense wrapper
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <SuccessContent />
+    </Suspense>
   );
 }
