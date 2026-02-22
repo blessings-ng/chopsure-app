@@ -67,24 +67,27 @@ function LandingContent() {
       </div>
 
       {/* NAV */}
+      {/* NAV */}
       <nav className="fixed top-0 w-full z-50 h-24 flex items-center justify-between px-6 lg:px-20 border-b border-white/5 backdrop-blur-md bg-black/10">
         <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md">
           ChopSure
         </span>
         
         <div className="flex items-center gap-4 md:gap-6">
+          {/* THEME TOGGLE */}
           <ThemeToggle />
-          <div className="hidden md:block">
-            <Link 
-              href="/auth/login" 
-              className="text-white font-bold uppercase tracking-widest text-xs hover:text-[#10B981] transition-colors drop-shadow-md"
-            >
-              Login
-            </Link>
-          </div>
+
+          {/* FIXED: Removed 'hidden md:block' so it shows on mobile too */}
+          <Link 
+            href="/auth/login" 
+            className="text-white font-bold uppercase tracking-widest text-[10px] md:text-xs hover:text-[#10B981] transition-colors drop-shadow-md"
+          >
+            Login
+          </Link>
+
           <Link 
             href="/auth" 
-            className="bg-[#FF6B00] text-white font-black px-6 md:px-8 py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-sm md:text-base"
+            className="bg-[#FF6B00] text-white font-black px-5 md:px-8 py-2.5 md:py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-[10px] md:text-base"
           >
             Get Access
           </Link>
