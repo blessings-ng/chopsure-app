@@ -14,19 +14,27 @@ export default function WelcomePage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth/login");
-        return;
+      // Use getSession for immediate hydration check
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Fallback to getUser for security verification
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.push("/auth/login");
+          return;
+        }
+        setFirstName(user.user_metadata?.first_name || "Foodie");
+      } else {
+        setFirstName(session.user.user_metadata?.first_name || "Foodie");
       }
-      // Get the first name they signed up with
-      const name = user.user_metadata?.first_name || "Foodie";
-      setFirstName(name);
 
-      // Fake a cinematic "loading" process for 2.5 seconds
-      setTimeout(() => {
+      // Cinematic "loading" process
+      const timer = setTimeout(() => {
         setIsReady(true);
       }, 2500);
+
+      return () => clearTimeout(timer);
     };
 
     fetchUser();
@@ -102,7 +110,6 @@ export default function WelcomePage() {
   );
 }
 
-// Small component for the animated checkmarks
 function LoadingStep({ text, delay }) {
   const [done, setDone] = useState(false);
 
