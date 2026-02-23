@@ -68,26 +68,28 @@ function LandingContent() {
 
       {/* NAV */}
       {/* NAV */}
-      <nav className="fixed top-0 w-full z-50 h-24 flex items-center justify-between px-6 lg:px-20 border-b border-white/5 backdrop-blur-md bg-black/10">
-        <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md">
+      <nav className="fixed top-0 w-full z-50 h-20 md:h-24 flex items-center justify-between px-4 md:px-20 border-b border-white/5 backdrop-blur-md bg-black/10">
+        {/* LOGO: Reduced from 2xl to lg on mobile */}
+        <span className="text-lg md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md shrink-0">
           ChopSure
         </span>
         
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-3 md:gap-6">
           {/* THEME TOGGLE */}
           <ThemeToggle />
 
-          {/* FIXED: Removed 'hidden md:block' so it shows on mobile too */}
+          {/* LOGIN: Scaled down for mobile */}
           <Link 
             href="/auth/login" 
-            className="text-white font-bold uppercase tracking-widest text-[10px] md:text-xs hover:text-[#10B981] transition-colors drop-shadow-md"
+            className="text-white font-bold uppercase tracking-widest text-[9px] md:text-xs hover:text-[#10B981] transition-colors drop-shadow-md whitespace-nowrap"
           >
             Login
           </Link>
 
+          {/* CTA BUTTON: Reduced padding and font size for mobile */}
           <Link 
             href="/auth" 
-            className="bg-[#FF6B00] text-white font-black px-5 md:px-8 py-2.5 md:py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-[10px] md:text-base"
+            className="bg-[#FF6B00] text-white font-black px-4 md:px-8 py-2 md:py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-[10px] md:text-base whitespace-nowrap"
           >
             Get Access
           </Link>
