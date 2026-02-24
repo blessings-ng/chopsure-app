@@ -69,7 +69,6 @@ export default function SignupPage() {
 
       if (signUpError) throw signUpError;
 
-      // Check if email confirmation is required (session will be null)
       if (data?.user && !data?.session) {
         setIsEmailSent(true);
         setIsLoading(false);

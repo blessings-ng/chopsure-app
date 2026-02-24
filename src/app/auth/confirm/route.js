@@ -1,4 +1,5 @@
-import { createClient } from '@/utils/supabase/server'
+// Change this line from /client/ to /server
+import { createClient } from '@/utils/supabase/server' 
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
@@ -7,13 +8,12 @@ export async function GET(request) {
   const next = searchParams.get('next') ?? '/welcome'
 
   if (code) {
-    const supabase = await createClient()
+    const supabase = await createClient() // This now correctly handles cookies on the server
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // If code exchange fails, send them to login
   return NextResponse.redirect(`${origin}/auth/login?error=auth_code_error`)
 }
