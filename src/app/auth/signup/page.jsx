@@ -23,7 +23,6 @@ export default function SignupPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(null);
   
-  // DETAILED PASSWORD STATES
   const [passwordValidation, setPasswordValidation] = useState({
     length: false,
     upper: false,
@@ -36,7 +35,6 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [isEmailSent, setIsEmailSent] = useState(false);
 
-  // UPDATED VALIDATION LOGIC
   useEffect(() => {
     const pwd = formData.password;
     setPasswordValidation({
@@ -84,9 +82,8 @@ export default function SignupPage() {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes("User already registered")) {
-          setIsEmailSent(true);
-          setIsLoading(false);
+        if (signUpError.message.includes("already registered") || signUpError.status === 400) {
+          router.push("/auth/login?message=account_exists");
           return;
         }
         throw signUpError;
@@ -94,12 +91,12 @@ export default function SignupPage() {
 
       if (data?.user) {
         setIsEmailSent(true);
-        setIsLoading(false);
       }
       
     } catch (err) {
       console.error("Signup error:", err);
       setError(err.message); 
+    } finally {
       setIsLoading(false);
     }
   };
@@ -145,7 +142,6 @@ export default function SignupPage() {
                   <div className="space-y-4">
                     <PasswordInputGroup label="Create Password" name="password" onChange={handleChange} isValid={isPasswordSecure} />
                     
-                    {/* ENHANCED PASSWORD CRITERIA LIST */}
                     <div className="grid grid-cols-2 gap-y-2 px-2">
                         <ValidationItem isValid={passwordValidation.length} text="6+ Characters" />
                         <ValidationItem isValid={passwordValidation.upper} text="Uppercase (A)" />
@@ -170,7 +166,7 @@ export default function SignupPage() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed select-none">
-                      By checking this box, I agree to lock my budget and understand I cannot withdraw cash impulsively.
+                      By checking this box, I agree to lock my budget.
                     </p>
                   </label>
 
@@ -178,6 +174,15 @@ export default function SignupPage() {
                     {isFormValid && <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>}
                     <span className="relative z-10">{isLoading ? "Verifying..." : "Create Account"}</span>
                   </button>
+
+                  {/* LOGIN REDIRECT ADDED HERE */}
+                  <p className="text-center text-sm font-medium text-slate-500 mt-6">
+                    Already have a vault? 
+                    <Link href="/auth/login" className="ml-2 text-[#FF6B00] font-bold hover:underline">
+                      Login here
+                    </Link>
+                  </p>
+
                 </form>
               </>
             ) : (
@@ -187,7 +192,7 @@ export default function SignupPage() {
                 </div>
                 <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-4">Check Your Mail</h1>
                 <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed">
-                  Verification link sent to <span className="text-[#FF6B00] font-bold">{formData.email}</span>. Please check your inbox.
+                  Verification link sent to <span className="text-[#FF6B00] font-bold">{formData.email}</span>.
                 </p>
                 <button onClick={() => setIsEmailSent(false)} className="text-[#FF6B00] font-black uppercase tracking-widest text-[10px] hover:underline">
                   Wrong email? Go back
@@ -216,15 +221,15 @@ export default function SignupPage() {
   );
 }
 
-// HELPER FOR PASSWORD LIST
+// ValidationItem, InputGroup, and PasswordInputGroup remain the same...
 function ValidationItem({ isValid, text }) {
-    return (
-      <div className={`flex items-center gap-2 transition-colors duration-300 ${isValid ? "text-green-500" : "text-slate-400"} text-[10px] font-bold uppercase tracking-tight`}>
-        {isValid ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
-        {text}
-      </div>
-    );
-  }
+  return (
+    <div className={`flex items-center gap-2 transition-colors duration-300 ${isValid ? "text-green-500" : "text-slate-400"} text-[10px] font-bold uppercase tracking-tight`}>
+      {isValid ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
+      {text}
+    </div>
+  );
+}
 
 function InputGroup({ label, name, type, icon, onChange }) {
   return (
