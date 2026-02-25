@@ -24,13 +24,11 @@ export default function SignupPage() {
   const [passwordsMatch, setPasswordsMatch] = useState(null);
   const [isLengthValid, setIsLengthValid] = useState(false);
   
-  // SUPABASE & UI STATES
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
-  const [isEmailSent, setIsEmailSent] = useState(false); // NEW: State for email check
+  const [isEmailSent, setIsEmailSent] = useState(false);
 
-  // REAL-TIME VALIDATION
   useEffect(() => {
     setIsLengthValid(formData.password.length >= 6);
     if (formData.confirmPassword) {
@@ -57,7 +55,6 @@ export default function SignupPage() {
         email: formData.email,
         password: formData.password,
         options: {
-          // Point to your confirmation route
           emailRedirectTo: `${window.location.origin}/auth/confirm`,
           data: {
             first_name: formData.firstName,
@@ -66,17 +63,19 @@ export default function SignupPage() {
           }
         }
       });
+      if (signUpError) {
+        if (signUpError.message.includes("User already registered")) {
+          
+          setIsEmailSent(true);
+          setIsLoading(false);
+          return;
+        }
+        throw signUpError;
+      }
 
-      if (signUpError) throw signUpError;
-
-      if (data?.user && !data?.session) {
+      if (data?.user) {
         setIsEmailSent(true);
         setIsLoading(false);
-      } else {
-        setShowToast(true);
-        setTimeout(() => {
-          router.push("/welcome"); 
-        }, 3000);
       }
       
     } catch (err) {
@@ -91,7 +90,6 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500 relative overflow-hidden">
       
-      {/* LEFT SIDE - SIGNUP FORM */}
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-24 py-10 relative z-10 bg-white dark:bg-[#050505] transition-colors duration-500 border-r border-slate-100 dark:border-white/5 overflow-y-auto">
         
         <div className="w-full max-w-md mx-auto lg:mx-0">
@@ -212,21 +210,11 @@ export default function SignupPage() {
            </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {showToast && (
-          <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.9 }} className="fixed bottom-10 right-4 md:right-10 z-[100] bg-[#10B981] p-1 rounded-2xl shadow-[0_10px_40px_rgba(16,185,129,0.3)]">
-            <div className="bg-[#050505] rounded-xl px-6 py-4 flex items-center gap-4 border border-[#10B981]/30">
-              <div className="w-10 h-10 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981]"><CheckCircle2 size={24} /></div>
-              <div><h4 className="text-white font-black italic uppercase tracking-wider text-sm md:text-base leading-none mb-1">Vault Secured.</h4><p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Redirecting to Dashboard...</p></div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
 
+// Sub-components (InputGroup, PasswordInputGroup) remain the same as your provided code
 function InputGroup({ label, name, type, icon, onChange }) {
   return (
     <div className="relative group">

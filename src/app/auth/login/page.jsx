@@ -3,17 +3,27 @@
 import Link from "next/link";
 import { User, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react"; // Added useEffect
+import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
 import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
+
+  // Check for errors passed in the URL (like from an expired email link)
+  useEffect(() => {
+    const errorType = searchParams.get("error");
+    if (errorType === "auth_code_error" || errorType === "link_expired") {
+      setError("The verification link has expired. Please log in to request a new one.");
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,8 +36,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Supabase Login
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -41,7 +50,16 @@ export default function LoginPage() {
       
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid email or password.");
+      
+      // SPECIFIC ERROR HANDLING
+      if (err.message.includes("Email not confirmed")) {
+        setError("Your email hasn't been verified yet. Please check your inbox.");
+      } else if (err.message.includes("Invalid login credentials")) {
+        setError("Invalid email or password. Please try again.");
+      } else {
+        setError(err.message);
+      }
+      
       setIsLoading(false);
     }
   };
@@ -74,12 +92,19 @@ export default function LoginPage() {
             <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Access your food vault.</p>
 
             {/* ERROR MESSAGE DISPLAY */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500 text-xs font-bold uppercase tracking-wide">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
-                <span className="leading-relaxed">{error}</span>
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500 text-xs font-bold uppercase tracking-wide overflow-hidden"
+                >
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
+                  <span className="leading-relaxed">{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               <InputGroup label="Email Address" name="email" type="email" icon={<Mail size={18}/>} onChange={handleChange} />
