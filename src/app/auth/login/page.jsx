@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { User, Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Lock, Mail, ArrowLeft, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react"; // Added useEffect
-import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
+import { useState, useEffect, Suspense } from "react"; 
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
-export default function LoginPage() {
+function LoginContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
 
-  // Check for errors passed in the URL (like from an expired email link)
   useEffect(() => {
     const errorType = searchParams.get("error");
     if (errorType === "auth_code_error" || errorType === "link_expired") {
@@ -51,7 +50,6 @@ export default function LoginPage() {
     } catch (err) {
       console.error("Login error:", err);
       
-      // SPECIFIC ERROR HANDLING
       if (err.message.includes("Email not confirmed")) {
         setError("Your email hasn't been verified yet. Please check your inbox.");
       } else if (err.message.includes("Invalid login credentials")) {
@@ -69,7 +67,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500 relative overflow-hidden">
       
-      {/* 1. LEFT SIDE - LOGIN FORM */}
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-8 sm:px-12 lg:px-24 xl:px-32 relative z-10 bg-white dark:bg-[#050505] transition-colors duration-500 border-r border-slate-100 dark:border-white/5">
         
         <Link href="/" className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 text-slate-400 hover:text-[#FF6B00] transition-colors font-bold uppercase tracking-widest text-[10px]">
@@ -91,7 +88,6 @@ export default function LoginPage() {
             <h1 className="text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Welcome Back</h1>
             <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Access your food vault.</p>
 
-            {/* ERROR MESSAGE DISPLAY */}
             <AnimatePresence>
               {error && (
                 <motion.div 
@@ -144,7 +140,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* 2. RIGHT SIDE - VISUAL */}
       <div className="hidden lg:flex w-[55%] bg-[#0a0a0a] relative overflow-hidden items-center justify-center p-20">
         <div className="absolute inset-0 z-0">
           <img 
@@ -170,7 +165,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* SUCCESS TOAST */}
       <AnimatePresence>
         {showToast && (
           <motion.div
@@ -199,7 +193,19 @@ export default function LoginPage() {
   );
 }
 
-// REUSABLE INPUTS
+// 2. Wrap the final export in Suspense
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-[#050505] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
 function InputGroup({ label, name, type, icon, onChange }) {
   return (
     <div className="relative group">
