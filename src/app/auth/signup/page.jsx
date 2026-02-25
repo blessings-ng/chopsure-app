@@ -22,15 +22,31 @@ export default function SignupPage() {
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(null);
-  const [isLengthValid, setIsLengthValid] = useState(false);
   
+  // DETAILED PASSWORD STATES
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    upper: false,
+    lower: false,
+    number: false,
+    symbol: false
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showToast, setShowToast] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
 
+  // UPDATED VALIDATION LOGIC
   useEffect(() => {
-    setIsLengthValid(formData.password.length >= 6);
+    const pwd = formData.password;
+    setPasswordValidation({
+      length: pwd.length >= 6,
+      upper: /[A-Z]/.test(pwd),
+      lower: /[a-z]/.test(pwd),
+      number: /[0-9]/.test(pwd),
+      symbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
+    });
+
     if (formData.confirmPassword) {
       setPasswordsMatch(formData.password === formData.confirmPassword);
     } else {
@@ -43,9 +59,12 @@ export default function SignupPage() {
     if (error) setError(""); 
   };
 
+  const isPasswordSecure = Object.values(passwordValidation).every(Boolean);
+  const isFormValid = isPasswordSecure && passwordsMatch && termsAccepted && !isLoading;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!passwordsMatch || !isLengthValid || !termsAccepted) return;
+    if (!isFormValid) return;
     
     setIsLoading(true);
     setError("");
@@ -63,9 +82,9 @@ export default function SignupPage() {
           }
         }
       });
+
       if (signUpError) {
         if (signUpError.message.includes("User already registered")) {
-          
           setIsEmailSent(true);
           setIsLoading(false);
           return;
@@ -85,8 +104,6 @@ export default function SignupPage() {
     }
   };
 
-  const isFormValid = passwordsMatch && isLengthValid && termsAccepted && !isLoading;
-
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500 relative overflow-hidden">
       
@@ -98,16 +115,12 @@ export default function SignupPage() {
           </Link>
 
           <div className="mb-8">
-            <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">
+            <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase text-balance">
               ChopSure
             </span>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
             {!isEmailSent ? (
               <>
                 <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Secure My Month</h1>
@@ -130,18 +143,22 @@ export default function SignupPage() {
                   <InputGroup label="Email Address" name="email" type="email" icon={<Mail size={18}/>} onChange={handleChange} />
                   
                   <div className="space-y-4">
-                    <PasswordInputGroup label="Create Password" name="password" onChange={handleChange} isValid={isLengthValid} />
+                    <PasswordInputGroup label="Create Password" name="password" onChange={handleChange} isValid={isPasswordSecure} />
+                    
+                    {/* ENHANCED PASSWORD CRITERIA LIST */}
+                    <div className="grid grid-cols-2 gap-y-2 px-2">
+                        <ValidationItem isValid={passwordValidation.length} text="6+ Characters" />
+                        <ValidationItem isValid={passwordValidation.upper} text="Uppercase (A)" />
+                        <ValidationItem isValid={passwordValidation.lower} text="Lowercase (a)" />
+                        <ValidationItem isValid={passwordValidation.number} text="Number (1)" />
+                        <ValidationItem isValid={passwordValidation.symbol} text="Symbol (#)" />
+                    </div>
+
                     <PasswordInputGroup label="Confirm Password" name="confirmPassword" onChange={handleChange} isValid={passwordsMatch} showValidation={formData.confirmPassword.length > 0} />
 
-                    <div className="flex flex-col gap-2 text-[10px] font-bold uppercase tracking-wide px-2">
-                       <div className={`flex items-center gap-2 transition-colors duration-300 ${isLengthValid ? "text-green-500" : "text-slate-400"}`}>
-                          {isLengthValid ? <Check size={12} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
-                          At least 6 characters
-                       </div>
-                       <div className={`flex items-center gap-2 transition-colors duration-300 ${passwordsMatch === true ? "text-green-500" : passwordsMatch === false ? "text-red-500" : "text-slate-400"}`}>
-                          {passwordsMatch === true ? <Check size={12} /> : passwordsMatch === false ? <X size={12} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
-                          {passwordsMatch === false ? "Passwords do not match" : "Passwords match"}
-                       </div>
+                    <div className={`flex items-center gap-2 px-2 text-[10px] font-bold uppercase tracking-wide transition-colors duration-300 ${passwordsMatch === true ? "text-green-500" : passwordsMatch === false ? "text-red-500" : "text-slate-400"}`}>
+                        {passwordsMatch === true ? <Check size={12} /> : passwordsMatch === false ? <X size={12} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
+                        {passwordsMatch === false ? "Passwords do not match" : "Passwords match"}
                     </div>
                   </div>
                   
@@ -159,62 +176,56 @@ export default function SignupPage() {
 
                   <button type="submit" disabled={!isFormValid} className={`relative w-full h-12 rounded-full font-bold uppercase tracking-wider overflow-hidden transition-all mt-4 group ${isFormValid ? "bg-transparent border-2 border-[#FF6B00] text-[#FF6B00] dark:text-white hover:text-white cursor-pointer" : "bg-slate-100 dark:bg-white/10 text-slate-400 border-none cursor-not-allowed"}`}>
                     {isFormValid && <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>}
-                    <span className="relative z-10">{isLoading ? "Creating..." : "Create Account"}</span>
+                    <span className="relative z-10">{isLoading ? "Verifying..." : "Create Account"}</span>
                   </button>
                 </form>
               </>
             ) : (
-              <div className="py-10 text-left animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="py-10 text-left">
                 <div className="w-16 h-16 bg-[#FF6B00]/10 text-[#FF6B00] rounded-full flex items-center justify-center mb-6">
                   <Mail size={32} className="animate-pulse" />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-4">Check Your Mail</h1>
                 <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed">
-                  We've sent a verification link to <span className="text-[#FF6B00] font-bold">{formData.email}</span>. Please check your inbox to activate your account.
+                  Verification link sent to <span className="text-[#FF6B00] font-bold">{formData.email}</span>. Please check your inbox.
                 </p>
                 <button onClick={() => setIsEmailSent(false)} className="text-[#FF6B00] font-black uppercase tracking-widest text-[10px] hover:underline">
                   Wrong email? Go back
                 </button>
               </div>
             )}
-
-            {!isEmailSent && (
-              <p className="mt-8 text-center text-sm font-medium text-slate-500">
-                Already secured? <Link href="/auth/login" className="ml-2 text-[#FF6B00] font-bold hover:underline">Login here</Link>
-              </p>
-            )}
           </motion.div>
         </div>
       </div>
 
-      {/* RIGHT SIDE - VISUAL */}
-      <div className="hidden lg:flex w-[55%] bg-[#0a0a0a] relative overflow-hidden items-center justify-center p-20">
-         <div className="absolute inset-0 z-0">
-          <img src="https://images.unsplash.com/photo-1543353071-873f17a7a088?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover opacity-40 grayscale" alt="Food Texture" />
+      <div className="hidden lg:flex w-[55%] bg-[#0a0a0a] relative items-center justify-center p-20">
+         <div className="absolute inset-0 z-0 opacity-40 grayscale">
+          <img src="https://images.unsplash.com/photo-1543353071-873f17a7a088?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover" alt="Food Texture" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-[#FF6B00]/20 mix-blend-overlay"></div>
-          <div className="absolute inset-0 bg-black/30"></div>
         </div>
         <div className="relative z-10 max-w-lg">
-           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] text-xs font-black uppercase tracking-widest mb-8 backdrop-blur-md">
+           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] text-xs font-black uppercase tracking-widest mb-8">
               <CheckCircle2 size={14} /> Guaranteed Meals
            </div>
            <h2 className="text-6xl font-black italic text-white uppercase leading-[0.9] tracking-tighter mb-6">
              Start <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">Locking Today.</span>
            </h2>
-           <p className="text-lg text-white/70 font-medium leading-relaxed mb-10">
-             Join thousands of Nigerians who have automated their feeding. Lock your budget once, eat everyday. No stories.
-           </p>
-           <div className="flex gap-8 border-t border-white/10 pt-8">
-             <div><p className="text-3xl font-black text-white">12k+</p><p className="text-xs text-white/50 uppercase tracking-widest font-bold">Users Fed</p></div>
-             <div><div className="flex items-baseline gap-1"><p className="text-3xl font-black text-white">50+</p><MapPin size={16} className="text-[#FF6B00]" /></div><p className="text-xs text-white/50 uppercase tracking-widest font-bold">Partner Eateries</p></div>
-           </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Sub-components (InputGroup, PasswordInputGroup) remain the same as your provided code
+// HELPER FOR PASSWORD LIST
+function ValidationItem({ isValid, text }) {
+    return (
+      <div className={`flex items-center gap-2 transition-colors duration-300 ${isValid ? "text-green-500" : "text-slate-400"} text-[10px] font-bold uppercase tracking-tight`}>
+        {isValid ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
+        {text}
+      </div>
+    );
+  }
+
 function InputGroup({ label, name, type, icon, onChange }) {
   return (
     <div className="relative group">
@@ -229,14 +240,13 @@ function PasswordInputGroup({ label, name, onChange, isValid, showValidation = f
   const [showPassword, setShowPassword] = useState(false);
   let borderColor = "border-slate-100 dark:border-white/5 focus:border-[#FF6B00]";
   if (showValidation) {
-    if (isValid === true) borderColor = "border-green-500 focus:border-green-500";
-    if (isValid === false) borderColor = "border-red-500 focus:border-red-500";
+    borderColor = isValid ? "border-green-500" : "border-red-500";
   }
   return (
     <div className="relative group">
-      <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${showValidation && isValid === false ? "text-red-500" : "text-slate-400 group-focus-within:text-[#FF6B00]"}`}><Lock size={18} /></div>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#FF6B00]"><Lock size={18} /></div>
       <input type={showPassword ? "text" : "password"} name={name} onChange={onChange} placeholder=" " required className={`peer w-full h-12 md:h-14 bg-slate-50 dark:bg-white/5 border-2 rounded-xl outline-none text-slate-900 dark:text-white font-bold transition-all duration-300 focus:bg-white dark:focus:bg-black pl-12 pr-12 pt-4 ${borderColor}`} />
-      <label className={`absolute left-12 top-1/2 -translate-y-1/2 text-xs font-bold uppercase tracking-wide pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-3 peer-placeholder-shown:text-xs peer-placeholder-shown:top-1/2 peer-placeholder-shown:left-12 top-3 ${showValidation && isValid === false ? "text-red-400 peer-focus:text-red-500" : "text-slate-400 peer-focus:text-[#FF6B00]"}`}>{label}</label>
+      <label className="absolute left-12 top-1/2 -translate-y-1/2 text-xs font-bold uppercase tracking-wide pointer-events-none transition-all peer-focus:text-[10px] peer-focus:top-3 peer-placeholder-shown:text-xs peer-placeholder-shown:top-1/2 peer-placeholder-shown:left-12 top-3 text-slate-400 peer-focus:text-[#FF6B00]">{label}</label>
       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#FF6B00] transition-colors">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
     </div>
   );
