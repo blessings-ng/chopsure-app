@@ -23,8 +23,8 @@ function LandingContent() {
   useEffect(() => setMounted(true), []);
 
   const slides = [
-    { image: "/images/landing/hero-image1.jfif", title: "RESTAURANT" },
-    { image: "/images/landing/hero-image2.jfif", title: "GROCERY" },
+    { image: "/images/landing/hero-image1.jpeg", title: "RESTAURANT" },
+    { image: "/images/landing/hero-image2.jpeg", title: "GROCERY" },
     { image: "/images/auth/signup-individual.avif", title: "CHEF" }
   ];
 
