@@ -54,21 +54,41 @@ function DashboardContent() {
         return;
       }
       setUser(user);
+
+      // UPDATED: Fetch balance instead of static allowance
       const { data: wallet } = await supabase
         .from("wallets")
-        .select("daily_allowance, total_limit")
+        .select("balance, total_limit, daily_allowance")
         .eq("user_id", user.id)
         .single();
 
       if (wallet) {
+        // DYNAMIC CALCULATION LOGIC
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        
+        // Get total days in current month
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        // Calculate days left (including today)
+        const daysRemaining = Math.max(1, (daysInMonth - now.getDate()) + 1);
+        
+        // If balance exists, divide balance by days left. 
+        // Otherwise, fallback to the static daily_allowance.
+        const dynamicDaily = wallet.balance > 0 
+          ? (wallet.balance / daysRemaining) 
+          : (wallet.daily_allowance || 0);
+
         setAllowanceData({
-          remaining: wallet.daily_allowance || 0,
+          remaining: dynamicDaily,
           total: wallet.total_limit || 1 
         });
       }
       setLoading(false);
     };
+
     getData();
+
     if (searchParams.get("status") === "purchase_success") {
       setShowSuccess(true);
       const timer = setTimeout(() => setShowSuccess(false), 5000);
@@ -92,7 +112,7 @@ function DashboardContent() {
     <motion.div 
       initial={{ opacity: 0, y: 10 }} 
       animate={{ opacity: 1, y: 0 }} 
-      className="relative space-y-10 pb-16 px-4 md:px-0" // Added px-4 for mobile edge safety
+      className="relative space-y-10 pb-16 px-4 md:px-0"
     >
       <SuccessNotice show={showSuccess} onClose={() => setShowSuccess(false)} />
 
@@ -103,7 +123,6 @@ function DashboardContent() {
               {currentUnit?.icon} {currentUnit?.name}
             </div>
           </div>
-          {/* Welcome back - Pushed to absolute left with -ml-1 */}
           <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white -ml-1">
             welcome back!
           </h1>
@@ -119,7 +138,6 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Grid restored to exactly your previous layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <VaultCard user={user} />
 
@@ -129,22 +147,22 @@ function DashboardContent() {
           </div>
           
           <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Remaining Allowance</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Remaining Allocation</p>
             <div>
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic leading-none">
-                ₦{allowanceData.remaining.toLocaleString()}
+                ₦{Math.floor(allowanceData.remaining).toLocaleString()}
               </h2>
               <div className="flex items-center gap-2 mt-4">
                 <div className="h-1 flex-1 bg-black/10 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${allowancePercentage}%` }}
+                    animate={{ width: `${Math.min(100, allowancePercentage)}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="h-full bg-black/40"
                   />
                 </div>
                 <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                    {Math.round(allowancePercentage)}%
+                    {Math.round(Math.min(100, allowancePercentage))}%
                 </span>
               </div>
             </div>
@@ -168,11 +186,11 @@ function DashboardContent() {
               Your <span className="text-[#FF6B00] font-bold">{currentUnit?.name}</span> protocol is active. 
               {tier === 'family' 
                 ? " Manage your household members to distribute your shared allowance." 
-                : " Your daily limit is locked based on your worker status."}
+                : " Your daily limit is adjusted based on your total secured balance."}
             </p>
             
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1"> Status</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
               <p className="text-lg font-black text-green-500 italic uppercase">Optimized</p>
             </div>
           </div>

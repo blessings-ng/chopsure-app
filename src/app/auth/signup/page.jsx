@@ -23,6 +23,7 @@ export default function SignupPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(null);
   
+  // PASSWORD COMPLEXITY STATES (Matches Supabase Auth Settings)
   const [passwordValidation, setPasswordValidation] = useState({
     length: false,
     upper: false,
@@ -35,6 +36,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [isEmailSent, setIsEmailSent] = useState(false);
 
+  // REAL-TIME VALIDATION ENGINE
   useEffect(() => {
     const pwd = formData.password;
     setPasswordValidation({
@@ -68,11 +70,14 @@ export default function SignupPage() {
     setError("");
 
     try {
+      const origin = window.location.origin;
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+          // Pointing to your server-side GET route for code exchange
+          emailRedirectTo: `${origin}/auth/confirm?next=/welcome`,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
@@ -82,14 +87,18 @@ export default function SignupPage() {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes("already registered") || signUpError.status === 400) {
+        // Redirect if account already exists
+        if (signUpError.message.toLowerCase().includes("already registered") || signUpError.status === 400) {
           router.push("/auth/login?message=account_exists");
           return;
         }
         throw signUpError;
       }
 
-      if (data?.user) {
+      // If identities is an empty array, user exists but Enumeration Protection is on
+      if (data?.user?.identities?.length === 0) {
+         router.push("/auth/login?message=account_exists");
+      } else if (data?.user) {
         setIsEmailSent(true);
       }
       
@@ -104,6 +113,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-[#050505] font-sans selection:bg-[#FF6B00] selection:text-white transition-colors duration-500 relative overflow-hidden">
       
+      {/* FORM SECTION */}
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-24 py-10 relative z-10 bg-white dark:bg-[#050505] transition-colors duration-500 border-r border-slate-100 dark:border-white/5 overflow-y-auto">
         
         <div className="w-full max-w-md mx-auto lg:mx-0">
@@ -112,7 +122,7 @@ export default function SignupPage() {
           </Link>
 
           <div className="mb-8">
-            <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase text-balance">
+            <span className="text-2xl md:text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">
               ChopSure
             </span>
           </div>
@@ -120,15 +130,17 @@ export default function SignupPage() {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
             {!isEmailSent ? (
               <>
-                <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Secure My Month</h1>
+                <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2 leading-none">Secure My Month</h1>
                 <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium mb-8">Create your food budget plan.</p>
 
-                {error && (
-                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500 text-xs font-bold uppercase tracking-wide">
-                    <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
-                    <span className="leading-relaxed">{error}</span>
-                  </div>
-                )}
+                <AnimatePresence>
+                  {error && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500 text-xs font-bold uppercase tracking-wide">
+                      <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
+                      <span className="leading-relaxed">{error}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -142,6 +154,7 @@ export default function SignupPage() {
                   <div className="space-y-4">
                     <PasswordInputGroup label="Create Password" name="password" onChange={handleChange} isValid={isPasswordSecure} />
                     
+                    {/* COMPLEXITY INDICATORS */}
                     <div className="grid grid-cols-2 gap-y-2 px-2">
                         <ValidationItem isValid={passwordValidation.length} text="6+ Characters" />
                         <ValidationItem isValid={passwordValidation.upper} text="Uppercase (A)" />
@@ -166,33 +179,31 @@ export default function SignupPage() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed select-none">
-                      By checking this box, I agree to lock my budget.
+                      I agree to lock my budget and understand I cannot withdraw cash impulsively.
                     </p>
                   </label>
 
                   <button type="submit" disabled={!isFormValid} className={`relative w-full h-12 rounded-full font-bold uppercase tracking-wider overflow-hidden transition-all mt-4 group ${isFormValid ? "bg-transparent border-2 border-[#FF6B00] text-[#FF6B00] dark:text-white hover:text-white cursor-pointer" : "bg-slate-100 dark:bg-white/10 text-slate-400 border-none cursor-not-allowed"}`}>
                     {isFormValid && <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 transition-transform duration-500 -z-10"></span>}
-                    <span className="relative z-10">{isLoading ? "Verifying..." : "Create Account"}</span>
+                    <span className="relative z-10">{isLoading ? "Processing..." : "Create Account"}</span>
                   </button>
 
-                  {/* LOGIN REDIRECT ADDED HERE */}
                   <p className="text-center text-sm font-medium text-slate-500 mt-6">
                     Already have a vault? 
                     <Link href="/auth/login" className="ml-2 text-[#FF6B00] font-bold hover:underline">
                       Login here
                     </Link>
                   </p>
-
                 </form>
               </>
             ) : (
-              <div className="py-10 text-left">
+              <div className="py-10 text-left animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="w-16 h-16 bg-[#FF6B00]/10 text-[#FF6B00] rounded-full flex items-center justify-center mb-6">
                   <Mail size={32} className="animate-pulse" />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-4">Check Your Mail</h1>
                 <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed">
-                  Verification link sent to <span className="text-[#FF6B00] font-bold">{formData.email}</span>.
+                  Verification link sent to <span className="text-[#FF6B00] font-bold">{formData.email}</span>. Please check your inbox.
                 </p>
                 <button onClick={() => setIsEmailSent(false)} className="text-[#FF6B00] font-black uppercase tracking-widest text-[10px] hover:underline">
                   Wrong email? Go back
@@ -203,6 +214,7 @@ export default function SignupPage() {
         </div>
       </div>
 
+      {/* VISUAL SECTION */}
       <div className="hidden lg:flex w-[55%] bg-[#0a0a0a] relative items-center justify-center p-20">
          <div className="absolute inset-0 z-0 opacity-40 grayscale">
           <img src="https://images.unsplash.com/photo-1543353071-873f17a7a088?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover" alt="Food Texture" />
@@ -215,21 +227,25 @@ export default function SignupPage() {
            <h2 className="text-6xl font-black italic text-white uppercase leading-[0.9] tracking-tighter mb-6">
              Start <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">Locking Today.</span>
            </h2>
+           <div className="flex gap-8 border-t border-white/10 pt-8 mt-8">
+             <div><p className="text-3xl font-black text-white">12k+</p><p className="text-xs text-white/50 uppercase tracking-widest font-bold">Users Fed</p></div>
+             <div><p className="text-3xl font-black text-white">50+</p><p className="text-xs text-white/50 uppercase tracking-widest font-bold">Partners</p></div>
+           </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ValidationItem, InputGroup, and PasswordInputGroup remain the same...
+// COMPONENTS
 function ValidationItem({ isValid, text }) {
-  return (
-    <div className={`flex items-center gap-2 transition-colors duration-300 ${isValid ? "text-green-500" : "text-slate-400"} text-[10px] font-bold uppercase tracking-tight`}>
-      {isValid ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
-      {text}
-    </div>
-  );
-}
+    return (
+      <div className={`flex items-center gap-2 transition-colors duration-300 ${isValid ? "text-green-500" : "text-slate-400"} text-[10px] font-bold uppercase tracking-tight`}>
+        {isValid ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-slate-400"></div>}
+        {text}
+      </div>
+    );
+  }
 
 function InputGroup({ label, name, type, icon, onChange }) {
   return (

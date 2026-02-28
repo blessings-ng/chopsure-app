@@ -23,9 +23,7 @@ export default function AuthSelectionPage() {
       </Link>
 
 
-      {/* =========================================
-          SECTION 1: INDIVIDUAL (Top/Left Diagonal)
-         ========================================= */}
+      {/*  */}
       <Link 
         href="/auth/signup"
         className="group absolute inset-0 w-full h-full z-20 bg-[#050505] hover:z-30 transition-all duration-500
