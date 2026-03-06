@@ -14,11 +14,9 @@ export default function WelcomePage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      // Use getSession for immediate hydration check
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        // Fallback to getUser for security verification
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           router.push("/auth/login");
@@ -75,12 +73,12 @@ export default function WelcomePage() {
         </motion.h1>
 
         <motion.p variants={itemVars} className="text-slate-400 font-medium mb-12 max-w-sm">
-          Your account is verified. We are setting up your personal food vault and locking in your preferences.
+          Your account is verified. We are setting up your personal account and locking in your preferences.
         </motion.p>
 
         {/* Cinematic Initialization Steps */}
         <div className="w-full max-w-xs space-y-4 mb-12 text-left">
-          <LoadingStep text="Encrypting Vault Details" delay={0.5} />
+          <LoadingStep text="Verifying Details" delay={0.5} />
           <LoadingStep text="Securing Budget Parameters" delay={1.2} />
           <LoadingStep text="Generating Virtual ID" delay={1.8} />
         </div>
@@ -101,7 +99,7 @@ export default function WelcomePage() {
                 : "bg-white/5 text-slate-500 cursor-not-allowed border border-white/10"
             }`}
           >
-            Enter Your Vault <ArrowRight size={18} />
+            Click To Go To Dashboard <ArrowRight size={18} />
           </button>
         </motion.div>
 
