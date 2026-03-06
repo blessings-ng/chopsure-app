@@ -76,7 +76,6 @@ export default function SignupPage() {
         email: formData.email,
         password: formData.password,
         options: {
-          // Pointing to your server-side GET route for code exchange
           emailRedirectTo: `${origin}/auth/confirm?next=/welcome`,
           data: {
             first_name: formData.firstName,
@@ -158,7 +157,7 @@ export default function SignupPage() {
                     <div className="grid grid-cols-2 gap-y-2 px-2">
                         <ValidationItem isValid={passwordValidation.length} text="6+ Characters" />
                         <ValidationItem isValid={passwordValidation.upper} text="Uppercase (A)" />
-                        <ValidationItem isValid={passwordValidation.lower} text="Lowercase (a)" />
+                        <ValidationItem isValid={passwordValidation.lower} text="Lowercase (aa)" />
                         <ValidationItem isValid={passwordValidation.number} text="Number (1)" />
                         <ValidationItem isValid={passwordValidation.symbol} text="Symbol (#)" />
                     </div>

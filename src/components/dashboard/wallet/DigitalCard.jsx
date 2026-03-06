@@ -13,7 +13,6 @@ export default function DigitalCard({ balance, loading }) {
           Total Balance
         </p>
         
-        {/* FLUID TEXT: text-4xl on mobile, scales to 7xl on desktop */}
         <h2 className="text-4xl sm:text-5xl md:text-7xl font-black italic tracking-tighter leading-none break-words">
           {loading ? (
             <span className="animate-pulse">...</span>
@@ -26,7 +25,7 @@ export default function DigitalCard({ balance, loading }) {
       {/* Industrial Tag: Extra detail for that "Premium" feel */}
       <div className="absolute top-8 right-8 hidden md:block">
         <div className="border border-white/20 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest opacity-40">
-          ChopSure Secure Vault
+          ChopSure Secure
         </div>
       </div>
     </div>

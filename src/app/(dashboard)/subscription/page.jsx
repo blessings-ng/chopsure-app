@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { User, Briefcase, Users, Check, Loader2, ArrowLeft, Shield, Lock, CreditCard, ChefHat, Truck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Briefcase, Users, Check, Loader2, ArrowLeft, Lock, CreditCard, ChefHat, Truck, AlertCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 
@@ -42,7 +42,7 @@ export default function SubscriptionPage() {
   const supabase = createClient();
   const router = useRouter();
   const [selected, setSelected] = useState("worker");
-  const [selectedMode, setSelectedMode] = useState(null); // Added for Cooked/Raw logic
+  const [selectedMode, setSelectedMode] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -70,7 +70,6 @@ export default function SubscriptionPage() {
     try {
       const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
       
-      // 1. Credit Vault, Lock Plan, and Save Consumption Mode
       await supabase.from("wallets").update({ 
         balance: currentBalance + amount,
         plan_locked_until: nextMonth.toISOString(),
@@ -78,7 +77,6 @@ export default function SubscriptionPage() {
         last_mode_change: new Date().toISOString()
       }).eq("user_id", userData.id);
 
-      // 2. Log Transaction
       await supabase.from("transactions").insert({
         user_id: userData.id,
         amount: amount,
@@ -88,7 +86,6 @@ export default function SubscriptionPage() {
         reference: reference
       });
 
-      // 3. Update Auth Metadata
       await supabase.auth.updateUser({ 
         data: { 
           subscription_tier: selected,
@@ -119,44 +116,55 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)]">
-      {/* HEADER (Unchanged) */}
+    <div className="flex flex-col min-h-[calc(100vh-80px)] overflow-x-hidden">
+      {/* HEADER */}
       <div className="border-b border-slate-200 dark:border-white/5 py-8 px-6 lg:px-10 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-black italic uppercase text-slate-900 dark:text-white">Unit <span className="text-[#FF6B00]">Selection</span></h1>
-          <p className="text-[10px] font-black uppercase text-slate-500">Fund your monthly vault capacity</p>
+          <p className="text-[10px] font-black uppercase text-slate-500">Select your preferred unit</p>
         </div>
         <Link href="/dashboard" className="text-slate-400 hover:text-[#FF6B00] transition-colors"><ArrowLeft size={20}/></Link>
       </div>
 
-      {/* NEW: MODE SELECTION STRIP (Minimal addition) */}
+      {/* MOBILE RESPONSIVE MODE SELECTION */}
       {!isLocked && (
-        <div className="p-6 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black/40 flex flex-col md:flex-row items-center justify-center gap-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-4">Deployment Mode:</p>
-          <div className="flex gap-4">
+        <div className={`py-10 px-6 flex flex-col items-center justify-center border-b border-slate-200 dark:border-white/5 transition-colors duration-500 ${!selectedMode ? 'bg-[#FF6B00]/5 dark:bg-[#FF6B00]/10' : 'bg-slate-50/50 dark:bg-white/[0.02]'}`}>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-6 text-center">
+            {!selectedMode && (
+              <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-500/10 px-3 py-1.5 rounded-full animate-pulse">
+                <AlertCircle size={14} /> Required Action
+              </span>
+            )}
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic">
+              Choose Consumption Mode
+            </p>
+          </div>
+
+          {/* Stacks on mobile (flex-col), side-by-side on desktop (sm:flex-row) */}
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-md">
             <button 
               onClick={() => setSelectedMode('cooked')}
-              className={`flex items-center gap-3 px-6 py-3 rounded-2xl border-2 transition-all font-black uppercase text-[10px] tracking-widest ${selectedMode === 'cooked' ? 'border-[#FF6B00] bg-[#FF6B00]/5 text-[#FF6B00]' : 'border-slate-200 dark:border-white/5 text-slate-400'}`}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 md:px-10 md:py-5 rounded-2xl border-2 transition-all font-black uppercase text-xs tracking-widest ${selectedMode === 'cooked' ? 'border-[#FF6B00] bg-[#FF6B00] text-white shadow-lg shadow-orange-500/20 md:scale-105' : !selectedMode ? 'border-[#FF6B00]/40 text-slate-600 dark:text-slate-300 hover:border-[#FF6B00]' : 'border-slate-200 dark:border-white/5 text-slate-400 hover:border-slate-300'}`}
             >
-              <ChefHat size={16}/> Cooked
+              <ChefHat size={20}/> Cooked
             </button>
             <button 
               onClick={() => setSelectedMode('raw')}
-              className={`flex items-center gap-3 px-6 py-3 rounded-2xl border-2 transition-all font-black uppercase text-[10px] tracking-widest ${selectedMode === 'raw' ? 'border-[#10B981] bg-[#10B981]/5 text-[#10B981]' : 'border-slate-200 dark:border-white/5 text-slate-400'}`}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 md:px-10 md:py-5 rounded-2xl border-2 transition-all font-black uppercase text-xs tracking-widest ${selectedMode === 'raw' ? 'border-[#10B981] bg-[#10B981] text-white shadow-lg shadow-green-500/20 md:scale-105' : !selectedMode ? 'border-[#10B981]/40 text-slate-600 dark:text-slate-300 hover:border-[#10B981]' : 'border-slate-200 dark:border-white/5 text-slate-400 hover:border-slate-300'}`}
             >
-              <Truck size={16}/> Raw
+              <Truck size={20}/> Raw
             </button>
           </div>
         </div>
       )}
 
-
-      {/* PLAN GRID (Unchanged UI) */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-white/5">
+      {/* PLAN GRID */}
+      <div className={`flex-1 grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-white/5 transition-all duration-700 ${!selectedMode && !isLocked ? "opacity-30 grayscale pointer-events-none blur-[1px]" : ""}`}>
         {UNITS.map((unit) => (
           <div 
             key={unit.id}
-            onClick={() => !isLocked && setSelected(unit.id)}
+            onClick={() => !isLocked && selectedMode && setSelected(unit.id)}
             className={`relative p-10 flex flex-col justify-between transition-all duration-500 ${isLocked ? "opacity-40 grayscale" : "cursor-pointer"} ${selected === unit.id ? unit.bg : ""}`}
           >
             {selected === unit.id && <motion.div layoutId="glow" className="absolute inset-0 border-2 border-[#FF6B00] z-10 pointer-events-none" />}
@@ -186,20 +194,24 @@ export default function SubscriptionPage() {
         ))}
       </div>
 
-      
-      {/* FOOTER (Unchanged Action) */}
+      {/* FOOTER */}
       <div className="p-8 bg-slate-50 dark:bg-black/20 border-t border-slate-200 dark:border-white/5 flex flex-col items-center">
         {isLocked ? (
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-            <Lock size={14}/> Protocol Locked until the 1st
+            <Lock size={14}/> Selection Locked until the next open window
           </p>
         ) : (
           <button 
             onClick={handlePaymentTrigger}
             disabled={loading || !selectedMode}
-            className="w-full max-w-xl h-20 bg-[#FF6B00] text-white dark:text-black font-black uppercase tracking-[0.4em] text-sm flex items-center justify-center gap-4 hover:scale-[1.01] transition-all shadow-xl disabled:opacity-30"
+            className="w-full max-w-xl h-20 bg-[#FF6B00] text-white dark:text-black font-black uppercase tracking-[0.4em] text-sm flex items-center justify-center gap-4 hover:scale-[1.01] transition-all shadow-xl disabled:opacity-30 disabled:grayscale"
           >
-            {loading ? <Loader2 className="animate-spin" /> : <><CreditCard size={20}/> Pay & Deploy Unit</>}
+            {loading ? <Loader2 className="animate-spin" /> : (
+              <>
+                <CreditCard size={20}/> 
+                {!selectedMode ? "Select Mode Above" : "Activate Plan"}
+              </>
+            )}
           </button>
         )}
       </div>

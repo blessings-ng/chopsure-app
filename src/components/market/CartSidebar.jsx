@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-// FIXED: Added ShoppingBag, ArrowRight, and X to imports
-import { ArrowLeft, ShoppingCart, Trash2, Plus, Minus, Loader2, X, ShoppingBag, ArrowRight } from "lucide-react";
-// FIXED: Added Framer Motion imports
+import { useState, useEffect } from "react";
+import { ArrowLeft, ShoppingCart, Trash2, Plus, Minus, Loader2, X, ShoppingBag, ArrowRight, AlertCircle, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCTS } from "@/data/raw-food";
 import { createClient } from "@/utils/supabase/client";
@@ -13,16 +11,43 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  
+  const [currentBalance, setCurrentBalance] = useState(0);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchBalance = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUser(user);
+          const { data: wallet } = await supabase
+            .from("wallets")
+            .select("balance")
+            .eq("user_id", user.id)
+            .single();
+            
+          if (wallet) {
+            setCurrentBalance(wallet.balance);
+          }
+        }
+      };
+      fetchBalance();
+    }
+  }, [isOpen, supabase]);
 
   const cartTotal = Object.entries(cart || {}).reduce((total, [id, qty]) => {
     const product = PRODUCTS.find(p => p.id === parseInt(id));
     return product ? total + (product.price * qty) : total;
   }, 0);
 
+  const isOverBalance = cartTotal > currentBalance;
+
   const handleCheckout = async () => {
+    if (isOverBalance) return; 
     setLoading(true);
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Auth session expired");
 
       const { data: wallet, error: walletError } = await supabase
@@ -64,23 +89,33 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
     }
   };
 
+  const handleTopUp = () => {
+    setIsOpen(false);
+    router.push("/top-up"); 
+  };
+
   return (
     <>
       <aside className={`fixed inset-y-0 right-0 z-[60] w-full sm:w-[400px] bg-white dark:bg-[#0a0a0a] border-l border-slate-200 dark:border-white/10 shadow-2xl transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
         <div className="h-full flex flex-col">
+          {/* HEADER */}
           <div className="flex items-center justify-between p-5 md:p-6 border-b border-slate-100 dark:border-white/5">
-            <h2 className="text-xl md:text-2xl font-black italic uppercase text-slate-900 dark:text-white">Your Cart</h2>
+            <div>
+              <h2 className="text-xl md:text-2xl font-black italic uppercase text-slate-900 dark:text-white leading-none">Your Cart</h2>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Vault: ₦{currentBalance.toLocaleString()}</p>
+            </div>
             <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
               <X size={20} className="text-slate-500" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scrollbar-hide">
+          {/* CART ITEMS */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scrollbar-hide relative">
             {(!cart || Object.keys(cart).length === 0) ? (
-              <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
-                <ShoppingBag size={64} className="mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Empty Vault</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center opacity-30">
+                <ShoppingBag size={64} className="mb-4 text-slate-400" />
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Empty Cart</p>
               </div>
             ) : (
               Object.entries(cart).map(([id, qty]) => {
@@ -108,19 +143,57 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
             )}
           </div>
 
+          {/* CHECKOUT FOOTER */}
           {cart && Object.keys(cart).length > 0 && (
             <div className="p-5 md:p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a]">
+              
               <div className="flex justify-between items-center mb-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subtotal</span>
-                <span className="text-xl font-black text-slate-900 dark:text-white italic">₦{cartTotal.toLocaleString()}</span>
+                <span className={`text-xl font-black italic ${isOverBalance ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
+                  ₦{cartTotal.toLocaleString()}
+                </span>
               </div>
-              <button 
-                onClick={handleCheckout}
-                disabled={loading}
-                className="w-full h-14 bg-[#FF6B00] text-white font-black uppercase italic tracking-wider rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-3"
-              >
-                {loading ? <Loader2 className="animate-spin" /> : <>Secure Checkout <ArrowRight size={18} /></>}
-              </button>
+
+              {/* DYNAMIC ERROR MESSAGE */}
+              <AnimatePresence>
+                {isOverBalance && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, marginBottom: 0 }} 
+                    animate={{ opacity: 1, height: 'auto', marginBottom: 16 }} 
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    className="flex items-center gap-3 text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20 overflow-hidden"
+                  >
+                    <AlertCircle size={16} className="shrink-0" />
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest leading-none mb-1">
+                        Insufficient Funds
+                      </p>
+                      <p className="text-[8px] font-bold text-red-500/70 uppercase tracking-wider">
+                        Short by: ₦{(cartTotal - currentBalance).toLocaleString()}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* DYNAMIC ACTION BUTTON */}
+              {isOverBalance ? (
+                <button 
+                  onClick={handleTopUp}
+                  className="w-full h-14 font-black uppercase tracking-wider rounded-2xl transition-all flex items-center justify-center gap-3 border-2 bg-transparent border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-black shadow-xl shadow-orange-500/10 active:scale-95"
+                >
+                  <Wallet size={18} /> Top Up Wallet
+                </button>
+              ) : (
+                <button 
+                  onClick={handleCheckout}
+                  disabled={loading}
+                  className="w-full h-14 bg-[#FF6B00] border-2 border-[#FF6B00] text-black font-black uppercase tracking-wider rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-3"
+                >
+                  {loading ? <Loader2 className="animate-spin" /> : <>Checkout <ArrowRight size={18} /></>}
+                </button>
+              )}
+
             </div>
           )}
         </div>

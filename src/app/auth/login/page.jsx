@@ -17,6 +17,9 @@ function LoginContent() {
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
 
+  // Dynamic Month Calculation
+  const nextMonthName = new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('default', { month: 'long' });
+
   useEffect(() => {
     const errorType = searchParams.get("error");
     if (errorType === "auth_code_error" || errorType === "link_expired") {
@@ -86,7 +89,7 @@ function LoginContent() {
             transition={{ duration: 0.5 }}
           >
             <h1 className="text-4xl font-black italic text-slate-900 dark:text-white uppercase mb-2">Welcome Back</h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Access your food vault.</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Access your account</p>
 
             <AnimatePresence>
               {error && (
@@ -131,7 +134,7 @@ function LoginContent() {
             </form>
 
             <p className="mt-8 text-center text-sm font-medium text-slate-500">
-              Don't have a vault? 
+              Don't have an account? 
               <Link href="/auth/signup" className="ml-2 text-[#FF6B00] font-bold hover:underline">
                 Get Access
               </Link>
@@ -153,11 +156,11 @@ function LoginContent() {
 
         <div className="relative z-10 max-w-lg">
            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 text-[#FF6B00] text-xs font-black uppercase tracking-widest mb-8 backdrop-blur-md">
-              <CheckCircle2 size={14} /> Guaranteed Meals
+             <CheckCircle2 size={14} /> Guaranteed Meals
            </div>
            <h2 className="text-6xl font-black italic text-white uppercase leading-[0.9] tracking-tighter mb-6">
               Don't Starve <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">In March.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">In {nextMonthName}.</span>
            </h2>
            <p className="text-lg text-white/70 font-medium leading-relaxed mb-10">
               Access your secured budget. Your food is safe, your belly is secured.
@@ -181,9 +184,6 @@ function LoginContent() {
                 <h4 className="text-white font-black italic uppercase tracking-wider text-sm md:text-base leading-none mb-1">
                   Access Granted.
                 </h4>
-                <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                  Opening Vault...
-                </p>
               </div>
             </div>
           </motion.div>
@@ -193,7 +193,6 @@ function LoginContent() {
   );
 }
 
-// 2. Wrap the final export in Suspense
 export default function LoginPage() {
   return (
     <Suspense fallback={
