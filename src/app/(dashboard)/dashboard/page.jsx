@@ -4,32 +4,31 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, ShieldCheck, Zap, Briefcase, Users, CheckCircle2, X } from "lucide-react";
+import { ShieldCheck, Zap, Briefcase, Users, CheckCircle2, X, ShoppingCart, Lock, ArrowRight, Send, Activity, RefreshCw, AlertTriangle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import VaultCard from "@/components/dashboard/VaultCard";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import Skeleton from "@/components/dashboard/Skeleton";
 
+const TIER_LIMITS = {
+  regular: { daily: 3500 },
+  worker: { daily: 8000 },
+  family: { daily: 25000 }
+};
+
 const SuccessNotice = ({ show, onClose }) => (
   <AnimatePresence>
     {show && (
       <motion.div 
-        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
         className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] md:w-auto"
       >
-        <div className="bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-green-500/20 flex items-center gap-4 border border-white/20 backdrop-blur-xl">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Order Confirmed</p>
-            <p className="text-sm font-bold italic uppercase">Purchase Successful!</p>
-          </div>
-          <button onClick={onClose} className="ml-4 p-1 hover:bg-white/10 rounded-lg transition-colors">
-            <X size={18} />
-          </button>
+        <div className="bg-[#10B981] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/20 backdrop-blur-xl">
+          <CheckCircle2 size={20} />
+          <p className="text-xs font-black uppercase tracking-widest italic">Action Successful</p>
+          <button onClick={onClose} className="ml-4 opacity-50"><X size={18} /></button>
         </div>
       </motion.div>
     )}
@@ -44,96 +43,116 @@ function DashboardContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [allowanceData, setAllowanceData] = useState({ remaining: 0, total: 0 });
+  const [allowanceData, setAllowanceData] = useState({ remaining: 0, total: 1 });
+  const [consumptionMode, setConsumptionMode] = useState("cooked");
+  const [activeTier, setActiveTier] = useState(null);
 
   useEffect(() => {
     const getData = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        router.push("/auth/login");
-        return;
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/auth/login"); return; }
       setUser(user);
 
-      // UPDATED: Fetch balance instead of static allowance
       const { data: wallet } = await supabase
         .from("wallets")
-        .select("balance, total_limit, daily_allowance")
+        .select("balance, consumption_mode")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (wallet) {
-        // DYNAMIC CALCULATION LOGIC
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        
-        // Get total days in current month
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        // Calculate days left (including today)
-        const daysRemaining = Math.max(1, (daysInMonth - now.getDate()) + 1);
-        
-        // If balance exists, divide balance by days left. 
-        // Otherwise, fallback to the static daily_allowance.
-        const dynamicDaily = wallet.balance > 0 
-          ? (wallet.balance / daysRemaining) 
-          : (wallet.daily_allowance || 0);
+      setConsumptionMode(wallet?.consumption_mode || "cooked");
 
-        setAllowanceData({
-          remaining: dynamicDaily,
-          total: wallet.total_limit || 1 
-        });
+      // STRICT EXPIRY LOGIC: Default to NULL. Only unlock if both tier AND a valid future date exist.
+      const metadata = user.user_metadata || {};
+      let validTier = null; 
+
+      if (metadata.subscription_tier && metadata.subscription_expiry) {
+        if (new Date() < new Date(metadata.subscription_expiry)) {
+          validTier = metadata.subscription_tier; 
+        }
       }
+
+      setActiveTier(validTier);
+
+      const activeTierLimit = validTier ? TIER_LIMITS[validTier].daily : 0;
+      const currentBalance = wallet?.balance || 0;
+
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const { data: transactions } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("user_id", user.id)
+        .eq("category", "debit")
+        .gte("created_at", startOfDay.toISOString());
+
+      const spentToday = transactions?.reduce((acc, tx) => acc + tx.amount, 0) || 0;
+      const remainingAllowance = Math.max(0, activeTierLimit - spentToday);
+      
+      setAllowanceData({
+        remaining: Math.min(currentBalance, remainingAllowance),
+        total: activeTierLimit 
+      });
+
       setLoading(false);
     };
 
     getData();
 
-    if (searchParams.get("status") === "purchase_success") {
+    if (searchParams.get("status") === "purchase_success" || searchParams.get("status") === "funded") {
       setShowSuccess(true);
-      const timer = setTimeout(() => setShowSuccess(false), 5000);
-      return () => clearTimeout(timer);
+      setTimeout(() => setShowSuccess(false), 5000);
+      router.replace('/dashboard');
     }
   }, [router, supabase, searchParams]);
 
-  const tier = user?.user_metadata?.subscription_tier || "regular";
+  const today = new Date();
+  const todayDate = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysUntilReset = daysInMonth - todayDate;
+
+  const isMartOpen = (todayDate >= 10 && todayDate <= 13) || (todayDate >= 25 && todayDate <= 28);
+  const martNextDate = todayDate < 10 ? "Opens on the 10th" : todayDate <= 13 ? "Closes on the 13th" : todayDate < 25 ? "Opens on the 25th" : "Closes on the 28th";
+
+  const isSubscribed = !!activeTier;
+
   const unitConfig = {
     regular: { name: "Regular Unit", icon: <Zap size={14} />, theme: "text-slate-400 border-slate-400" },
     worker: { name: "Worker Unit", icon: <Briefcase size={14} className="text-[#FF6B00]" />, theme: "text-[#FF6B00] border-[#FF6B00]" },
-    family: { name: "Family Unit", icon: <Users size={14} className="text-purple-500" />, theme: "text-purple-500 border-purple-500" }
+    family: { name: "Family Unit", icon: <Users size={14} className="text-purple-500" />, theme: "text-purple-500 border-purple-500" },
+    inactive: { name: "Activation Required", icon: <Lock size={14} />, theme: "text-red-500 border-red-500" }
   };
-
-  const currentUnit = unitConfig[tier] || unitConfig.regular;
-  const allowancePercentage = (allowanceData.remaining / allowanceData.total) * 100;
+  
+  const currentUnit = isSubscribed ? unitConfig[activeTier] : unitConfig.inactive;
+  const allowancePercentage = allowanceData.total > 0 ? (allowanceData.remaining / allowanceData.total) * 100 : 0;
 
   if (loading) return <Skeleton className="h-screen w-full" />;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      className="relative space-y-10 pb-16 px-4 md:px-0"
-    >
+    <div className="relative space-y-10 pb-16 px-4 md:px-0">
       <SuccessNotice show={showSuccess} onClose={() => setShowSuccess(false)} />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
-        <div className="w-full">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-white/5 ${currentUnit?.theme}`}>
-              {currentUnit?.icon} {currentUnit?.name}
-            </div>
+        <div>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-white/5 mb-2 ${currentUnit?.theme}`}>
+            {currentUnit?.icon} {currentUnit?.name}
           </div>
-          <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white -ml-1">
-            welcome back!
-          </h1>
+          <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white -ml-1">welcome back!</h1>
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
-          <Link href="/top-up" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-[#FF6B00] hover:text-black transition-all">
-            Top Up
+        {/* ACTION BAR: Top up is open to fund wallet, others route to subscription if inactive */}
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          <Link href="/top-up" className="px-5 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+            Top Up Vault
           </Link>
-          <Link href="/subscription" className="flex-1 md:flex-none text-center px-6 py-3.5 bg-[#FF6B00] text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-105 transition-all">
-            Subscription
+          
+          {consumptionMode === "cooked" && (
+            <Link href={isSubscribed ? "/wallet/transfer" : "/subscription"} className={`px-5 py-3 bg-white dark:bg-white/5 border font-black text-[9px] uppercase tracking-widest rounded-xl flex items-center gap-2 transition-colors ${isSubscribed ? 'border-[#FF6B00]/30 text-[#FF6B00] hover:bg-[#FF6B00]/10' : 'border-red-500/30 text-red-500 hover:bg-red-500/10'}`}>
+              {isSubscribed ? <Send size={12} /> : <Lock size={12} />} Transfer
+            </Link>
+          )}
+
+          <Link href="/subscription" className="px-5 py-3 bg-[#FF6B00] text-black font-black text-[9px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all">
+            {isSubscribed ? 'Plan details' : 'Activate Plan'}
           </Link>
         </div>
       </div>
@@ -141,62 +160,118 @@ function DashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <VaultCard user={user} />
 
-        <div className="bg-[#FF6B00] rounded-[2.5rem] p-10 text-black relative overflow-hidden group shadow-xl">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-            <ShieldCheck size={120} strokeWidth={1} />
-          </div>
-          
-          <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Remaining Allocation</p>
-            <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic leading-none">
-                ₦{Math.floor(allowanceData.remaining).toLocaleString()}
-              </h2>
-              <div className="flex items-center gap-2 mt-4">
-                <div className="h-1 flex-1 bg-black/10 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, allowancePercentage)}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                    className="h-full bg-black/40"
-                  />
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                    {Math.round(Math.min(100, allowancePercentage))}%
-                </span>
+        {/* FIXED: Checks isSubscribed FIRST before showing Raw Mart */}
+        {isSubscribed && consumptionMode === "raw" ? (
+          <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-10 relative overflow-hidden shadow-xl text-slate-900 dark:text-white">
+            <div className="absolute top-0 right-0 p-8 opacity-5"><ShoppingCart size={120} /></div>
+            <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Bulk Procurement</p>
+              <div>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">RAW MART</h2>
+                <p className={`text-[10px] font-bold uppercase tracking-widest mt-2 ${isMartOpen ? 'text-[#10B981]' : 'text-[#FF6B00]'}`}>
+                  {isMartOpen ? "Checkout Window Active" : `Checkout ${martNextDate}`}
+                </p>
+                <Link href="/mart" className="mt-6 inline-flex items-center px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg bg-[#FF6B00] text-black hover:scale-105 transition-all">
+                  Browse Mart <ArrowRight size={14} className="ml-2"/>
+                </Link>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className={`rounded-[2.5rem] p-10 relative overflow-hidden shadow-xl ${isSubscribed ? 'bg-[#FF6B00] text-black' : 'bg-slate-100 dark:bg-white/5 border border-red-500/20 text-slate-900 dark:text-white'}`}>
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              {isSubscribed ? <ShieldCheck size={120} /> : <Lock size={120} className="text-red-500" />}
+            </div>
+            <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Daily Allocation</p>
+              <div>
+                {isSubscribed ? (
+                  <>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">₦{Math.floor(allowanceData.remaining).toLocaleString()}</h2>
+                    <div className="flex items-center gap-2 mt-4">
+                      <div className="h-1 flex-1 bg-black/10 rounded-full overflow-hidden">
+                        <div style={{ width: `${allowancePercentage}%` }} className="h-full bg-black/40" />
+                      </div>
+                      <span className="text-[9px] font-black opacity-60">{Math.round(allowancePercentage)}%</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic text-red-500">₦0</h2>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mt-2 opacity-60 text-red-500">Plan Inactive</p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <RecentActivity user={user} />
+        
+        {/* PROTOCOL STATUS BOX -> Becomes Activation Required on the side */}
+        <div className={`bg-white dark:bg-white/5 border rounded-[2.5rem] p-8 relative overflow-hidden ${isSubscribed ? 'border-slate-100 dark:border-white/10' : 'border-red-500/30'}`}>
+          <div className="absolute -top-10 -right-10 opacity-5 rotate-12 pointer-events-none text-[#FF6B00]">
+            <Activity size={150} />
+          </div>
 
-        <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-[#FF6B00]/10 flex items-center justify-center text-[#FF6B00]">
-              <TrendingUp size={20} />
+          <div className="flex items-center justify-between mb-8 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSubscribed ? 'bg-[#FF6B00]/10 text-[#FF6B00]' : 'bg-red-500/10 text-red-500'}`}>
+                {isSubscribed ? <Activity size={20} /> : <AlertTriangle size={20} />}
+              </div>
+              <h3 className={`text-sm font-black italic uppercase ${isSubscribed ? 'text-slate-900 dark:text-white' : 'text-red-500'}`}>
+                {isSubscribed ? 'Unit Type' : 'Activation Required'}
+              </h3>
             </div>
-            <h3 className="text-sm font-black italic uppercase text-slate-900 dark:text-white">Insights</h3>
+            <div className="text-right">
+             
+            </div>
           </div>
           
-          <div className="space-y-6">
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              Your <span className="text-[#FF6B00] font-bold">{currentUnit?.name}</span> protocol is active. 
-              {tier === 'family' 
-                ? " Manage your household members to distribute your shared allowance." 
-                : " Your daily limit is adjusted based on your total secured balance."}
-            </p>
+          <div className="space-y-3 relative z-10">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Plan</p>
+                <p className={`text-sm font-black italic uppercase ${isSubscribed ? 'text-[#FF6B00]' : 'text-red-500'}`}>
+                  {isSubscribed ? activeTier : 'NONE'}
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Diet Mode</p>
+                {/* Diet mode resets to PENDING if inactive */}
+                <p className={`text-sm font-black italic uppercase ${isSubscribed ? (consumptionMode === 'raw' ? 'text-green-500' : 'text-[#FF6B00]') : 'text-slate-500 dark:text-slate-400'}`}>
+                  {isSubscribed ? consumptionMode : 'PENDING'}
+                </p>
+              </div>
+            </div>
             
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-              <p className="text-lg font-black text-green-500 italic uppercase">Optimized</p>
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5 flex justify-between items-center">
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  {consumptionMode === 'raw' ? 'Procurement Limit' : 'Daily Cap Limit'}
+                </p>
+                <p className={`text-lg font-black italic uppercase ${isSubscribed ? 'dark:text-white' : 'text-red-500'}`}>
+                  {!isSubscribed 
+                    ? 'LOCKED' 
+                    : consumptionMode === 'raw' 
+                      ? 'Open Window' 
+                      : `₦${allowanceData.total.toLocaleString()}`
+                  }
+                </p>
+              </div>
+              {!isSubscribed && (
+                <Link href="/subscription" className="px-4 py-2 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-red-500/20">
+                  Activate
+                </Link>
+              )}
             </div>
           </div>
         </div>
+        
       </div>
-    </motion.div>
+    </div>
   );
 }
 

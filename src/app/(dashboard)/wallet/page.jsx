@@ -29,7 +29,7 @@ export default function WalletPage() {
   }, [supabase]);
 
   return (
-    <main className="w-full max-w-5xl mx-auto px-4 md:px-6 pt-6 md:pt-24 pb-32 min-h-screen space-y-8 md:space-y-12">
+    <main className="w-full max-w-5xl mx-auto px-4 md:px-6 pt-6 md:pt-2 pb-32 min-h-screen space-y-8 md:space-y-12">
       
         {/* 1. Header Logic */}
         {/* <div className="flex flex-col gap-1 md:hidden">

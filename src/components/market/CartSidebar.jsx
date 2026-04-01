@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, ShoppingCart, Trash2, Plus, Minus, Loader2, X, ShoppingBag, ArrowRight, AlertCircle, Wallet } from "lucide-react";
+import { Trash2, Plus, Minus, Loader2, X, ShoppingBag, ArrowRight, AlertCircle, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCTS } from "@/data/raw-food";
 import { createClient } from "@/utils/supabase/client";
@@ -11,29 +11,27 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
   const [currentBalance, setCurrentBalance] = useState(0);
   const [user, setUser] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null); // The modern error state
 
   useEffect(() => {
     if (isOpen) {
+      setErrorMsg(null); // Reset errors when opened
       const fetchBalance = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUser(user);
-          const { data: wallet } = await supabase
-            .from("wallets")
-            .select("balance")
-            .eq("user_id", user.id)
-            .single();
-            
-          if (wallet) {
-            setCurrentBalance(wallet.balance);
-          }
+          const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle();
+          if (wallet) setCurrentBalance(wallet.balance);
         }
       };
       fetchBalance();
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen, supabase]);
 
   const cartTotal = Object.entries(cart || {}).reduce((total, [id, qty]) => {
@@ -43,30 +41,58 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
 
   const isOverBalance = cartTotal > currentBalance;
 
+  // Auto-clear errors after 4 seconds for a polished feel
+  const showError = (msg) => {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 4000);
+  };
+
   const handleCheckout = async () => {
-    if (isOverBalance) return; 
+    setErrorMsg(null);
     setLoading(true);
 
     try {
-      if (!user) throw new Error("Auth session expired");
+      if (!user) throw new Error("Session expired. Please log in again.");
 
-      const { data: wallet, error: walletError } = await supabase
+      // 1. SUBSCRIPTION CHECK (GATE 1)
+      const tier = user?.user_metadata?.subscription_tier;
+      if (!tier) {
+        setErrorMsg("System Protocol Inactive: Redirecting to Subscription Plans...");
+        setTimeout(() => {
+          setIsOpen(false);
+          router.push("/subscription");
+        }, 2500); // 2.5s delay to read the sleek error before redirect
+        return;
+      }
+
+      // 2. WINDOW CHECK FOR RAW USERS (GATE 2)
+      const { data: walletData } = await supabase
         .from("wallets")
-        .select("balance")
+        .select("consumption_mode, balance")
         .eq("user_id", user.id)
         .single();
 
-      if (walletError || !wallet) throw new Error("Wallet not found");
+      const today = new Date().getDate();
+      const isWindowOpen = (today >= 10 && today <= 13) || (today >= 25 && today <= 28);
 
-      if (wallet.balance < cartTotal) {
-        alert(`Insufficient Funds. Need ₦${cartTotal.toLocaleString()}, have ₦${wallet.balance.toLocaleString()}`);
+      if (walletData?.consumption_mode === "raw" && !isWindowOpen) {
+        showError("Raw mode procurement is strictly limited to windows: 10th-13th and 25th-28th.");
         setLoading(false);
         return;
       }
 
+      // 3. FUNDS CHECK
+      if (walletData.balance < cartTotal) {
+        showError("Insufficient Funds. Top up your vault to proceed.");
+        setLoading(false);
+        return;
+      }
+
+      // 4. EXECUTE TRANSACTION
+      const ref = `RMART-${Math.random().toString(36).toUpperCase().slice(2, 9)}`;
       const { error: updateError } = await supabase
         .from("wallets")
-        .update({ balance: wallet.balance - cartTotal })
+        .update({ balance: walletData.balance - cartTotal })
         .eq("user_id", user.id);
 
       if (updateError) throw updateError;
@@ -75,139 +101,129 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
         user_id: user.id,
         amount: cartTotal,
         category: "debit",
-        description: "RawMart Purchase",
+        description: "Bulk Grocery Procurement",
         status: "success",
-        reference: `RMART-${Math.random().toString(36).toUpperCase().slice(2, 9)}`
+        reference: ref
       });
 
       setIsOpen(false);
-      router.push("/dashboard?status=purchase_success"); 
+      router.push(`/receipt/${ref}`); 
     } catch (err) {
-      alert(err.message);
-    } finally {
+      showError(err.message);
       setLoading(false);
     }
   };
 
-  const handleTopUp = () => {
-    setIsOpen(false);
-    router.push("/top-up"); 
-  };
-
   return (
     <>
-      <aside className={`fixed inset-y-0 right-0 z-[60] w-full sm:w-[400px] bg-white dark:bg-[#0a0a0a] border-l border-slate-200 dark:border-white/10 shadow-2xl transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        
-        <div className="h-full flex flex-col">
-          {/* HEADER */}
-          <div className="flex items-center justify-between p-5 md:p-6 border-b border-slate-100 dark:border-white/5">
-            <div>
-              <h2 className="text-xl md:text-2xl font-black italic uppercase text-slate-900 dark:text-white leading-none">Your Cart</h2>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Vault: ₦{currentBalance.toLocaleString()}</p>
-            </div>
-            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
-              <X size={20} className="text-slate-500" />
-            </button>
-          </div>
-
-          {/* CART ITEMS */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scrollbar-hide relative">
-            {(!cart || Object.keys(cart).length === 0) ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center opacity-30">
-                <ShoppingBag size={64} className="mb-4 text-slate-400" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Empty Cart</p>
-              </div>
-            ) : (
-              Object.entries(cart).map(([id, qty]) => {
-                const product = PRODUCTS.find(p => p.id === parseInt(id));
-                if (!product) return null;
-                return (
-                  <div key={id} className="flex gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 items-center">
-                    <img src={product.image} className="w-14 h-14 md:w-16 md:h-16 rounded-xl object-cover bg-white shrink-0" alt={product.name} />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white truncate">{product.name}</h4>
-                      <p className="text-[10px] md:text-xs text-[#FF6B00] font-black mt-0.5">₦{product.price.toLocaleString()}</p>
-                      
-                      <div className="flex items-center gap-3 mt-2">
-                        <button onClick={() => removeFromCart(id)} className="w-6 h-6 rounded-lg bg-white dark:bg-white/10 flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors"><Minus size={12}/></button>
-                        <span className="text-xs font-black">{qty}</span>
-                        <button onClick={() => addToCart(id)} className="w-6 h-6 rounded-lg bg-[#FF6B00] text-white flex items-center justify-center"><Plus size={12}/></button>
-                      </div>
-                    </div>
-                    <button onClick={() => deleteItem(id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* CHECKOUT FOOTER */}
-          {cart && Object.keys(cart).length > 0 && (
-            <div className="p-5 md:p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a]">
-              
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subtotal</span>
-                <span className={`text-xl font-black italic ${isOverBalance ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
-                  ₦{cartTotal.toLocaleString()}
-                </span>
-              </div>
-
-              {/* DYNAMIC ERROR MESSAGE */}
-              <AnimatePresence>
-                {isOverBalance && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0, marginBottom: 0 }} 
-                    animate={{ opacity: 1, height: 'auto', marginBottom: 16 }} 
-                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                    className="flex items-center gap-3 text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20 overflow-hidden"
-                  >
-                    <AlertCircle size={16} className="shrink-0" />
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest leading-none mb-1">
-                        Insufficient Funds
-                      </p>
-                      <p className="text-[8px] font-bold text-red-500/70 uppercase tracking-wider">
-                        Short by: ₦{(cartTotal - currentBalance).toLocaleString()}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* DYNAMIC ACTION BUTTON */}
-              {isOverBalance ? (
-                <button 
-                  onClick={handleTopUp}
-                  className="w-full h-14 font-black uppercase tracking-wider rounded-2xl transition-all flex items-center justify-center gap-3 border-2 bg-transparent border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-black shadow-xl shadow-orange-500/10 active:scale-95"
-                >
-                  <Wallet size={18} /> Top Up Wallet
-                </button>
-              ) : (
-                <button 
-                  onClick={handleCheckout}
-                  disabled={loading}
-                  className="w-full h-14 bg-[#FF6B00] border-2 border-[#FF6B00] text-black font-black uppercase tracking-wider rounded-2xl hover:brightness-110 transition-all shadow-xl shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-3"
-                >
-                  {loading ? <Loader2 className="animate-spin" /> : <>Checkout <ArrowRight size={18} /></>}
-                </button>
-              )}
-
-            </div>
-          )}
-        </div>
-      </aside>
-
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[55]" 
-            onClick={() => setIsOpen(false)} 
-          />
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[998] cursor-pointer" 
+              onClick={() => setIsOpen(false)} 
+            />
+
+            <motion.aside 
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white dark:bg-[#0a0a0a] shadow-2xl z-[999] flex flex-col"
+            >
+              <div className="h-full flex flex-col relative">
+                
+                {/* HEADER */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-[#0a0a0a]">
+                  <div>
+                    <h2 className="text-2xl font-black italic uppercase text-slate-900 dark:text-white leading-none">Your Cart</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#FF6B00] mt-2 flex items-center gap-2">
+                      <Wallet size={12}/> Vault: ₦{currentBalance.toLocaleString()}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} 
+                    className="w-12 h-12 flex items-center justify-center bg-slate-100 dark:bg-white/5 rounded-2xl text-slate-500 hover:text-red-500 transition-all active:scale-90"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {/* SCROLLABLE ITEMS */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
+                  {(!cart || Object.keys(cart).length === 0) ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
+                      <ShoppingBag size={64} className="mb-4" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">No items selected</p>
+                    </div>
+                  ) : (
+                    Object.entries(cart).map(([id, qty]) => {
+                      const product = PRODUCTS.find(p => p.id === parseInt(id));
+                      if (!product) return null;
+                      return (
+                        <div key={id} className="flex gap-4 p-4 bg-slate-50 dark:bg-white/[0.03] rounded-3xl border border-slate-100 dark:border-white/5 items-center">
+                          <img src={product.image} className="w-16 h-16 rounded-2xl object-cover shrink-0" alt={product.name} />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{product.name}</h4>
+                            <p className="text-xs text-[#FF6B00] font-black mt-0.5">₦{product.price.toLocaleString()}</p>
+                            <div className="flex items-center gap-3 mt-3">
+                              <button onClick={() => removeFromCart(id)} className="w-8 h-8 rounded-xl bg-white dark:bg-white/10 flex items-center justify-center text-slate-500 hover:bg-red-500 hover:text-white transition-all"><Minus size={14}/></button>
+                              <span className="text-xs font-black">{qty}</span>
+                              <button onClick={() => addToCart(id)} className="w-8 h-8 rounded-xl bg-[#FF6B00] text-black flex items-center justify-center hover:scale-105 transition-all"><Plus size={14}/></button>
+                            </div>
+                          </div>
+                          <button onClick={() => deleteItem(id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* FOOTER */}
+                {cart && Object.keys(cart).length > 0 && (
+                  <div className="p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] pb-10">
+                    <div className="flex justify-between items-center mb-6">
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Total</span>
+                      <span className={`text-2xl font-black italic ${isOverBalance ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
+                        ₦{cartTotal.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* NEW: SLEEK IN-APP ERROR ANIMATION */}
+                    <AnimatePresence>
+                      {errorMsg && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, height: 0, marginBottom: 0 }}
+                          animate={{ opacity: 1, y: 0, height: "auto", marginBottom: 16 }}
+                          exit={{ opacity: 0, y: 10, height: 0, marginBottom: 0 }}
+                          className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-500 items-start overflow-hidden"
+                        >
+                          <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest leading-tight">Action Denied</p>
+                            <p className="text-[9px] font-bold mt-1 opacity-80 uppercase leading-snug">{errorMsg}</p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {isOverBalance ? (
+                      <button onClick={() => { setIsOpen(false); router.push("/top-up"); }} className="w-full h-16 border-2 border-[#FF6B00] text-[#FF6B00] font-black uppercase tracking-[0.2em] text-[11px] rounded-2xl flex items-center justify-center gap-3">
+                        <Wallet size={20} /> Top Up Vault
+                      </button>
+                    ) : (
+                      <button onClick={handleCheckout} disabled={loading} className="w-full h-16 bg-[#FF6B00] text-black font-black uppercase tracking-[0.2em] text-[11px] rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-orange-500/20 disabled:opacity-50 disabled:active:scale-100">
+                        {loading ? <Loader2 className="animate-spin" /> : <>Confirm Purchase <ArrowRight size={20} /></>}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
     </>

@@ -1,87 +1,95 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Zap, Plus, Loader2, ShieldCheck, Edit3, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Zap, Plus, Loader2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 
 export default function TopUpForm() {
   const supabase = createClient();
+  const router = useRouter();
   const [amount, setAmount] = useState(5000);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLocked, setIsLocked] = useState(false); 
 
   useEffect(() => {
     const init = async () => {
       const { data: { user: activeUser } } = await supabase.auth.getUser();
       if (activeUser) {
         setUser(activeUser);
-        const { data: wallet } = await supabase
-          .from("wallets")
-          .select("plan_locked_until")
-          .eq("user_id", activeUser.id)
-          .single();
-
-        if (wallet?.plan_locked_until && new Date() < new Date(wallet.plan_locked_until)) {
-          setIsLocked(true);
-        }
       }
     };
     init();
-  }, []);
+  }, [supabase]);
 
   const completeInjection = async (reference) => {
     setLoading(true);
     try {
-      const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-      const calculatedDailyLimit = Math.floor(Number(amount) / 30);
+      // 1. SAFELY fetch the current balance
+      const { data: wallet, error: fetchError } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      // 2. Log Transaction
-      await supabase.from("transactions").insert({
+      if (fetchError) throw fetchError;
+
+      const newBalance = (Number(wallet?.balance) || 0) + Number(amount);
+
+      // 2. Logic: Update if exists, Insert if new. STRICTLY balance only.
+      if (wallet) {
+        const { error: updateError } = await supabase
+          .from("wallets")
+          .update({ balance: newBalance })
+          .eq("user_id", user.id);
+          
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("wallets")
+          .insert({ 
+            user_id: user.id,
+            balance: newBalance
+          });
+          
+        if (insertError) throw insertError;
+      }
+
+      // 3. Log the transaction
+      const { error: txError } = await supabase.from("transactions").insert({
         user_id: user.id,
         amount: Number(amount),
         reference: reference,
         category: "topup",
-        description: "Credited",
+        description: "Funded Vault",
         status: "success"
       });
 
-      // 3. Update Wallet & Lock
-      const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle();
-      const newBalance = (Number(wallet?.balance) || 0) + Number(amount);
+      if (txError) throw txError;
 
-      await supabase.from("wallets").update({ 
-        balance: newBalance,
-        plan_locked_until: nextMonth.toISOString()
-      }).eq("user_id", user.id);
+      // 4. Finalize and Redirect
+      router.refresh();
+      router.push("/dashboard?status=funded");
 
-      // 4. Set Metadata for the Spending Page to recognize the custom limit
-      await supabase.auth.updateUser({ 
-        data: { 
-          subscription_tier: "custom", 
-          custom_daily_limit: calculatedDailyLimit,
-          is_custom_plan: true 
-        } 
-      });
-
-      window.location.href = "/dashboard?status=funded";
     } catch (err) {
+      console.error("Vault Sync Error:", err);
+      alert(`Payment successful but vault sync failed: ${err.message}`);
+    } finally {
       setLoading(false);
-      alert("Vault sync failed. Ref: " + reference);
     }
   };
 
   const handleManualPayment = () => {
-    if (isLocked) return; // Guard clause
-    if (!window.PaystackPop || !user) return alert("System Link Error.");
+    if (!window.PaystackPop || !user) return alert("System Link Error. Please refresh the page.");
+    
+    setLoading(true);
 
     const handler = window.PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       email: user.email,
       amount: amount * 100,
-      ref: `CS-CUST-${Date.now()}`,
+      ref: `CS-FUND-${Date.now()}`,
       callback: (response) => completeInjection(response.reference),
       onClose: () => setLoading(false)
     });
@@ -107,38 +115,24 @@ export default function TopUpForm() {
 
       {/* RIGHT SIDE */}
       <div className="flex-1 flex flex-col justify-center items-center bg-white dark:bg-transparent px-6">
-        {isLocked ? (
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto">
-              <Lock className="text-slate-400" size={32} />
+        <div className="w-full max-w-md text-center">
+          <div className="flex items-center justify-between mb-8 dark:text-white">
+            <button onClick={() => setAmount(Math.max(100, amount - 1000))} className="w-14 h-14 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-[#FF6B00] hover:text-white transition-all"><Plus size={20} className="rotate-45"/></button>
+            <div className="relative">
+               <h2 className="text-7xl font-black italic tracking-tighter">₦{amount.toLocaleString()}</h2>
+               <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2 italic">Select Top Up Amount</p>
             </div>
-            <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Plan Locked</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] max-w-xs mx-auto">
-              You are currently on an active plan cycle. This feature is restricted until next open window.
-            </p>
+            <button onClick={() => setAmount(amount + 1000)} className="w-14 h-14 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-[#FF6B00] hover:text-white transition-all"><Plus size={20}/></button>
           </div>
-        ) : (
-          <div className="w-full max-w-md text-center">
-            {/* Amount Selection UI (Kept exactly as you had it) */}
-            <div className="flex items-center justify-between mb-8 dark:text-white">
-              <button onClick={() => setAmount(Math.max(100, amount - 1000))} className="w-14 h-14 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-[#FF6B00] hover:text-white transition-all"><Plus size={20} className="rotate-45"/></button>
-              <div className="relative" onClick={() => setIsEditing(true)}>
-                 <h2 className="text-7xl font-black italic tracking-tighter">₦{amount.toLocaleString()}</h2>
-                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Daily: ₦{Math.floor(amount/30).toLocaleString()}</p>
-              </div>
-              <button onClick={() => setAmount(amount + 1000)} className="w-14 h-14 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-[#FF6B00] hover:text-white transition-all"><Plus size={20}/>
-              </button>
-            </div>
 
-            <button 
-              onClick={handleManualPayment}
-              disabled={loading}
-              className="w-full h-24 bg-slate-900 dark:bg-[#FF6B00] text-white dark:text-black font-black uppercase tracking-[0.6em] text-sm flex items-center justify-center gap-4 shadow-2xl transition-all active:scale-95"
-            >
-              {loading ? <Loader2 className="animate-spin" /> : "Fund Wallet"}
-            </button>
-          </div>
-        )}
+          <button 
+            onClick={handleManualPayment}
+            disabled={loading}
+            className="w-full h-24 bg-slate-900 dark:bg-[#FF6B00] text-white dark:text-black font-black uppercase tracking-[0.6em] text-sm flex items-center justify-center gap-4 shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "Fund Wallet"}
+          </button>
+        </div>
       </div>
     </div>
   );

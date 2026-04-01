@@ -5,24 +5,34 @@ import { CreditCard, Loader2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function VaultCard({ user }) {
-  const supabase = createClient();
   const [balance, setBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function getBalance() {
       if (!user) return;
+      
+      // Initialize Supabase inside the effect to prevent infinite re-render loops
+      const supabase = createClient(); 
+      
+      // FIXED: maybeSingle() stops the 406 crash if the wallet is empty
       const { data, error } = await supabase
         .from("wallets")
         .select("balance")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle(); 
 
-      if (!error && data) setBalance(data.balance);
+      if (error) {
+        console.error("VaultCard Fetch Error:", error.message);
+      }
+
+      // Safely default to 0 if data is null (meaning brand new user with no wallet yet)
+      setBalance(data?.balance || 0); 
       setIsLoading(false);
     }
+    
     getBalance();
-  }, [user, supabase]);
+  }, [user]); // Removed supabase from dependency array to stabilize the fetch
 
   const formatted = new Intl.NumberFormat('en-NG', {
     style: 'currency', currency: 'NGN', maximumFractionDigits: 0
