@@ -27,7 +27,6 @@ export default function WelcomePage() {
         setFirstName(session.user.user_metadata?.first_name || "Foodie");
       }
 
-      // Cinematic "loading" process
       const timer = setTimeout(() => {
         setIsReady(true);
       }, 2500);
@@ -38,7 +37,6 @@ export default function WelcomePage() {
     fetchUser();
   }, [router, supabase]);
 
-  // Framer Motion Animation Variants
   const containerVars = {
     hidden: { opacity: 0 },
     show: {
@@ -73,7 +71,7 @@ export default function WelcomePage() {
         </motion.h1>
 
         <motion.p variants={itemVars} className="text-slate-400 font-medium mb-12 max-w-sm">
-          Your account is verified. We are setting up your personal account and locking in your preferences.
+          Your account is verified. We are setting up your personal account.
         </motion.p>
 
         {/* Cinematic Initialization Steps */}
@@ -83,7 +81,6 @@ export default function WelcomePage() {
           <LoadingStep text="Generating Virtual ID" delay={1.8} />
         </div>
 
-        {/* Enter Dashboard Button (Appears when ready) */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: isReady ? 1 : 0, scale: isReady ? 1 : 0.9 }}

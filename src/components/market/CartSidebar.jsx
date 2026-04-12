@@ -13,11 +13,11 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
   const [loading, setLoading] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(0);
   const [user, setUser] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null); // The modern error state
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
-      setErrorMsg(null); // Reset errors when opened
+      setErrorMsg(null);
       const fetchBalance = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -41,7 +41,6 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
 
   const isOverBalance = cartTotal > currentBalance;
 
-  // Auto-clear errors after 4 seconds for a polished feel
   const showError = (msg) => {
     setErrorMsg(msg);
     setTimeout(() => setErrorMsg(null), 4000);
@@ -57,11 +56,11 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
       // 1. SUBSCRIPTION CHECK (GATE 1)
       const tier = user?.user_metadata?.subscription_tier;
       if (!tier) {
-        setErrorMsg("System Protocol Inactive: Redirecting to Subscription Plans...");
+        setErrorMsg("Plan Inactive: Redirecting to Subscription Plans...");
         setTimeout(() => {
           setIsOpen(false);
           router.push("/subscription");
-        }, 2500); // 2.5s delay to read the sleek error before redirect
+        }, 3500); // 
         return;
       }
 
@@ -76,14 +75,14 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
       const isWindowOpen = (today >= 10 && today <= 13) || (today >= 25 && today <= 28);
 
       if (walletData?.consumption_mode === "raw" && !isWindowOpen) {
-        showError("Raw mode procurement is strictly limited to windows: 10th-13th and 25th-28th.");
+        showError("Action cannot be carried out now. Check back on 10th-13th and 25th-28th");
         setLoading(false);
         return;
       }
 
       // 3. FUNDS CHECK
       if (walletData.balance < cartTotal) {
-        showError("Insufficient Funds. Top up your vault to proceed.");
+        showError("Insufficient Funds. Top up your wallet to proceed.");
         setLoading(false);
         return;
       }
@@ -101,7 +100,7 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
         user_id: user.id,
         amount: cartTotal,
         category: "debit",
-        description: "Bulk Grocery Procurement",
+        description: "Bulk Grocery",
         status: "success",
         reference: ref
       });
@@ -212,7 +211,7 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
 
                     {isOverBalance ? (
                       <button onClick={() => { setIsOpen(false); router.push("/top-up"); }} className="w-full h-16 border-2 border-[#FF6B00] text-[#FF6B00] font-black uppercase tracking-[0.2em] text-[11px] rounded-2xl flex items-center justify-center gap-3">
-                        <Wallet size={20} /> Top Up Vault
+                        <Wallet size={20} /> Top Up Wallet
                       </button>
                     ) : (
                       <button onClick={handleCheckout} disabled={loading} className="w-full h-16 bg-[#FF6B00] text-black font-black uppercase tracking-[0.2em] text-[11px] rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-orange-500/20 disabled:opacity-50 disabled:active:scale-100">

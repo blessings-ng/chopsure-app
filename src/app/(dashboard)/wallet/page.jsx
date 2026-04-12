@@ -31,7 +31,6 @@ export default function WalletPage() {
   return (
     <main className="w-full max-w-5xl mx-auto px-4 md:px-6 pt-6 md:pt-2 pb-32 min-h-screen space-y-8 md:space-y-12">
       
-        {/* 1. Header Logic */}
         {/* <div className="flex flex-col gap-1 md:hidden">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Financial Vault</p>
           <h1 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white">MyYYYY Wallet</h1>
@@ -41,12 +40,10 @@ export default function WalletPage() {
         <DigitalCard balance={balance} loading={loading} />
       </section>
 
-      {/* 3. Quick Actions (Buttons) */}
       <section className="w-full">
         <QuickActions />
       </section>
 
-      {/* 4. History (The List) */}
       <section className="w-full">
         <TransactionHistory transactions={transactions} />
       </section>

@@ -61,10 +61,8 @@ export default function SubscriptionPage() {
 
         if (wallet) {
           setCurrentBalance(wallet.balance || 0);
-          // Only set the mode if it actually exists in DB
           if (wallet.consumption_mode) setSelectedMode(wallet.consumption_mode);
           
-          // LOCK CHECK: Only lock if the date in DB is in the future
           if (wallet.plan_locked_until && new Date() < new Date(wallet.plan_locked_until)) {
             setIsLocked(true);
           }
@@ -77,7 +75,6 @@ export default function SubscriptionPage() {
   const finalizeActivation = async (reference = "INTERNAL_FUND", paidAmount = 0) => {
     setLoading(true);
     try {
-      // Calculate the start of next month for the lock (e.g., May 1st at 00:00:00)
       const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
       
       const { data: wallet } = await supabase
@@ -88,7 +85,6 @@ export default function SubscriptionPage() {
 
       const newBalance = (wallet?.balance || 0) + paidAmount;
 
-      // 1. Update Wallet with Mode and Lock
       const { error: walletErr } = await supabase
         .from("wallets")
         .upsert({ 
@@ -101,7 +97,6 @@ export default function SubscriptionPage() {
 
       if (walletErr) throw walletErr;
 
-      // 2. Log Transaction if money was actually paid via Paystack
       if (paidAmount > 0) {
         await supabase.from("transactions").insert({
           user_id: userData.id,
@@ -113,17 +108,17 @@ export default function SubscriptionPage() {
         });
       }
 
-      // 3. Update Auth Metadata (This is what we fixed!)
       await supabase.auth.updateUser({ 
         data: { 
           subscription_tier: selected,
-          subscription_expiry: nextMonth.toISOString(), // <-- THIS SAVES THE EXPIRY DATE
+          subscription_expiry: nextMonth.toISOString(), 
           is_custom_plan: false 
         } 
       });
 
       router.refresh();
-      router.push("/dashboard?status=funded");
+      // CHANGED: Now pushes to the receipt page instead of dashboard
+      router.push(`/receipt/${reference}`);
 
     } catch (err) {
       console.error("Activation Error:", err);
@@ -137,15 +132,14 @@ export default function SubscriptionPage() {
     if (!selectedMode) return alert("Please select a mode: Cooked or Raw");
     const plan = UNITS.find(u => u.id === selected);
     
-    // Check if they already have enough in their vault to cover the monthly cost
     if (currentBalance >= plan.monthly) {
-      if (confirm(`Use ₦${plan.monthly.toLocaleString()} from your vault to activate this plan?`)) {
-        return finalizeActivation("VAULT_DEDUCTION", 0);
+      if (confirm(`Use ₦${plan.monthly.toLocaleString()} from your wallet to activate this plan?`)) {
+        // CHANGED: Generates a unique reference so the receipt page can find it
+        return finalizeActivation(`CS-SUB-${Date.now()}`, 0);
       }
     }
 
-    // Otherwise, trigger Paystack for the full amount
-    if (!window.PaystackPop) return alert("Payment system offline.");
+    if (!window.PaystackPop) return alert("Payment system offline");
     
     setLoading(true);
     const handler = window.PaystackPop.setup({
@@ -164,12 +158,11 @@ export default function SubscriptionPage() {
       <div className="border-b border-slate-200 dark:border-white/5 py-8 px-6 lg:px-10 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-black italic uppercase text-slate-900 dark:text-white">Unit <span className="text-[#FF6B00]">Selection</span></h1>
-          <p className="text-[10px] font-black uppercase text-slate-500 italic">Configure your protocol</p>
+          <p className="text-[10px] font-black uppercase text-slate-500 italic">Configure</p>
         </div>
         <Link href="/dashboard" className="text-slate-400 hover:text-[#FF6B00] transition-colors"><ArrowLeft size={20}/></Link>
       </div>
 
-      {/* MODE SELECTION (Unlocked until first activation) */}
       {!isLocked && (
         <div className={`py-10 px-6 flex flex-col items-center justify-center border-b border-slate-200 dark:border-white/5 transition-colors duration-500 ${!selectedMode ? 'bg-[#FF6B00]/5' : 'bg-slate-50/50 dark:bg-white/[0.02]'}`}>
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic mb-6">Choose Consumption Mode</p>
@@ -219,7 +212,7 @@ export default function SubscriptionPage() {
         {isLocked ? (
           <div className="flex items-center gap-3 text-slate-500">
              <Lock size={16}/>
-             <p className="text-[10px] font-black uppercase tracking-widest">Protocol Locked until next window</p>
+             <p className="text-[10px] font-black uppercase tracking-widest">Plan Locked until next window</p>
           </div>
         ) : (
           <button 

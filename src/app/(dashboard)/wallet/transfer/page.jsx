@@ -49,7 +49,6 @@ export default function TransferPage() {
       const currentBal = wallet?.balance || 0;
       setBalance(currentBal);
 
-      // --- MATCH DASHBOARD TIER LIMITS ---
       const tier = user.user_metadata?.subscription_tier || "regular";
       const TIER_LIMITS = { regular: 3500, worker: 8000, family: 25000 };
       const activeLimit = TIER_LIMITS[tier] || 3500;
@@ -86,7 +85,7 @@ export default function TransferPage() {
   }, [isScanning, mounted]);
 
   useEffect(() => {
-    if (recipient.length > 3) setVendorName("Verified Vendor ✅"); 
+    if (recipient.length > 3) setVendorName("Verified Vendor"); 
     else setVendorName("");
   }, [recipient]);
 
@@ -121,7 +120,6 @@ export default function TransferPage() {
         reference: referenceCode
       });
 
-      // Update local state for immediate visual feedback
       setBalance(prev => prev - txAmount);
       setSpentToday(prev => prev + txAmount);
 
@@ -146,8 +144,8 @@ export default function TransferPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-[#050505] p-8 text-center">
         <Lock className="text-red-500 mb-6" size={48} />
-        <h1 className="text-3xl font-black uppercase italic tracking-tighter dark:text-white mb-2">Checkout Restricted</h1>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest max-w-xs mb-8">Please use the Mart for procurement in Raw mode.</p>
+        <h1 className="text-3xl font-black uppercase italic tracking-tighter dark:text-white mb-2">Checkout Not Allowed</h1>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest max-w-xs mb-8">Please use the Mart in Raw mode.</p>
         <Link href="/dashboard" className="w-full max-w-xs py-5 bg-[#FF6B00] text-black font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl">Dashboard</Link>
       </div>
     );

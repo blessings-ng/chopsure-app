@@ -49,7 +49,6 @@ function LandingContent() {
   return (
     <div className="relative min-h-screen overflow-x-hidden selection:bg-[#10B981] selection:text-white font-sans transition-colors duration-300">
       
-      {/* FIXED BACKGROUND SLIDESHOW */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-black">
         {slides.map((slide, index) => (
           <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? "opacity-100" : "opacity-0"}`}>
@@ -69,16 +68,13 @@ function LandingContent() {
       {/* NAV */}
       {/* NAV */}
       <nav className="fixed top-0 w-full z-50 h-20 md:h-24 flex items-center justify-between px-4 md:px-20 border-b border-white/5 backdrop-blur-md bg-black/10">
-        {/* LOGO: Reduced from 2xl to lg on mobile */}
         <span className="text-lg md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md shrink-0">
           ChopSure
         </span>
         
         <div className="flex items-center gap-3 md:gap-6">
-          {/* THEME TOGGLE */}
           <ThemeToggle />
 
-          {/* LOGIN: Scaled down for mobile */}
           <Link 
             href="/auth/login" 
             className="text-white font-bold uppercase tracking-widest text-[9px] md:text-xs hover:text-[#10B981] transition-colors drop-shadow-md whitespace-nowrap"
@@ -264,7 +260,7 @@ function LandingContent() {
                     <div className="space-y-8">
                       <div className="inline-block px-4 py-2 bg-[#FF6B00] text-black text-xs font-black uppercase tracking-widest rounded-lg">B2B Solution</div>
                       <h3 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter leading-none">
-                        THE CORPORATE <br/> <span className="text-[#FF6B00]">VAULT.</span>
+                        THE CORPORATE <br/> <span className="text-[#FF6B00]">WALLET.</span>
                       </h3>
                       <p className="text-xl text-slate-300 font-medium max-w-md">
                         Disburse meal allowances to 10 or 10,000 staff instantly. Ensure your workforce is fueled and focused.
@@ -278,7 +274,7 @@ function LandingContent() {
                         href="/auth?mode=signup" 
                         className="inline-block px-8 py-4 bg-white text-black font-black uppercase italic tracking-wider hover:bg-[#10B981] hover:text-white transition-colors rounded-xl"
                       >
-                        Deploy Company Vault
+                        Deploy Company Account
                       </Link>
                     </div>
                     <div className="h-full min-h-[300px] bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center relative">

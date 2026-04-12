@@ -11,7 +11,7 @@ export default function SideBar() {
     { name: "Overview", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
     { name: "My Wallet", path: "/wallet", icon: <Wallet size={20} /> },
     { name: "Subscription", path: "/subscription", icon: <Shield size={20} /> },
-    { name: "Market", path: "/market", icon: <ShoppingBag size={20} /> }, // Shortened for Mobile fit
+    { name: "Market", path: "/market", icon: <ShoppingBag size={20} /> },
     { name: "Settings", path: "/settings", icon: <Settings size={20} /> },
   ];
 

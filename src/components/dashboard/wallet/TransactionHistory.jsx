@@ -12,7 +12,6 @@ export default function TransactionHistory({ transactions }) {
       
       <div className="space-y-3 pb-24">
         {transactions.map((tx) => {
-          // Internal check to ensure consistency
           const isCredit = tx.category === 'topup' || tx.category === 'top-up';
 
           return (
@@ -38,7 +37,6 @@ export default function TransactionHistory({ transactions }) {
                 </div>
               </div>
 
-              {/* AMOUNT COLOR: Now correctly checks for Credit vs Debit */}
               <p className={`font-black italic text-sm md:text-lg shrink-0 ml-2 ${
                 isCredit ? 'text-green-500' : 'text-red-900 dark:text-red-500'
               }`}>

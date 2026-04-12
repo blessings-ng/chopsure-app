@@ -23,7 +23,6 @@ export default function SignupPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(null);
   
-  // PASSWORD COMPLEXITY STATES (Matches Supabase Auth Settings)
   const [passwordValidation, setPasswordValidation] = useState({
     length: false,
     upper: false,
@@ -36,7 +35,6 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [isEmailSent, setIsEmailSent] = useState(false);
 
-  // REAL-TIME VALIDATION ENGINE
   useEffect(() => {
     const pwd = formData.password;
     setPasswordValidation({
@@ -86,7 +84,6 @@ export default function SignupPage() {
       });
 
       if (signUpError) {
-        // Redirect if account already exists
         if (signUpError.message.toLowerCase().includes("already registered") || signUpError.status === 400) {
           router.push("/auth/login?message=account_exists");
           return;
@@ -94,7 +91,6 @@ export default function SignupPage() {
         throw signUpError;
       }
 
-      // If identities is an empty array, user exists but Enumeration Protection is on
       if (data?.user?.identities?.length === 0) {
          router.push("/auth/login?message=account_exists");
       } else if (data?.user) {
@@ -157,7 +153,7 @@ export default function SignupPage() {
                     <div className="grid grid-cols-2 gap-y-2 px-2">
                         <ValidationItem isValid={passwordValidation.length} text="6+ Characters" />
                         <ValidationItem isValid={passwordValidation.upper} text="Uppercase (A)" />
-                        <ValidationItem isValid={passwordValidation.lower} text="Lowercase (aa)" />
+                        <ValidationItem isValid={passwordValidation.lower} text="Lowercase ()" />
                         <ValidationItem isValid={passwordValidation.number} text="Number (1)" />
                         <ValidationItem isValid={passwordValidation.symbol} text="Symbol (#)" />
                     </div>
@@ -188,7 +184,7 @@ export default function SignupPage() {
                   </button>
 
                   <p className="text-center text-sm font-medium text-slate-500 mt-6">
-                    Already have a vault? 
+                    Already have an account? 
                     <Link href="/auth/login" className="ml-2 text-[#FF6B00] font-bold hover:underline">
                       Login here
                     </Link>

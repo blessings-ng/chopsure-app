@@ -23,7 +23,7 @@ function LoginContent() {
   useEffect(() => {
     const errorType = searchParams.get("error");
     if (errorType === "auth_code_error" || errorType === "link_expired") {
-      setError("The verification link has expired. Please log in to request a new one.");
+      setError("The verification link has expired. Please request a new one.");
     }
   }, [searchParams]);
 
@@ -129,7 +129,7 @@ function LoginContent() {
                 {isFormValid && (
                   <span className="absolute inset-0 w-full h-full bg-[#FF6B00] translate-y-full group-hover:translate-y-0 group-active:translate-y-0 transition-transform duration-500 -z-10"></span>
                 )}
-                <span className="relative z-10">{isLoading ? "Authenticating..." : "Secure Login"}</span>
+                <span className="relative z-10">{isLoading ? "Logging in..." : "Login"}</span>
               </button>
             </form>
 
@@ -182,7 +182,7 @@ function LoginContent() {
               </div>
               <div>
                 <h4 className="text-white font-black italic uppercase tracking-wider text-sm md:text-base leading-none mb-1">
-                  Access Granted.
+                  Logged in.
                 </h4>
               </div>
             </div>

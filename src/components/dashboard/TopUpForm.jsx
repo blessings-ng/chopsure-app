@@ -68,9 +68,9 @@ export default function TopUpForm() {
 
       if (txError) throw txError;
 
-      // 4. Finalize and Redirect
+      // 4. Finalize and Redirect to Receipt!
       router.refresh();
-      router.push("/dashboard?status=funded");
+      router.push(`/receipt/${reference}`); // <-- THIS IS THE MAGIC FIX
 
     } catch (err) {
       console.error("Vault Sync Error:", err);

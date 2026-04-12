@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { ShieldCheck, ArrowRight, Download, Share2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
-// 1. This component handles the logic and UI
 function SuccessContent() {
   const searchParams = useSearchParams();
   const status = searchParams.get("status");
@@ -14,8 +13,8 @@ function SuccessContent() {
   const isFunding = status === "funded";
   const title = isFunding ? "P SECURED" : "PAYMENT COMPLETE";
   const subtitle = isFunding 
-    ? "Your vault has been successfully injected with new capital." 
-    : "Transaction authorized. The vendor has been credited.";
+    ? "Your wallet has been funded successfully" 
+    : "Transaction successful. The vendor has been credited.";
 
   return (
     <div className="min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-6 text-center">
@@ -85,7 +84,6 @@ function SuccessContent() {
   );
 }
 
-// 2. The default export MUST wrap the content in Suspense
 export default function SuccessPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white font-black uppercase tracking-widest text-[10px]">Verifying Transaction...</div>}>

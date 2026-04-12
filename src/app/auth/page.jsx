@@ -63,7 +63,7 @@ export default function AuthSelectionPage() {
       </Link>
 
       {/* =========================================
-          SECTION 2: COMPANY (Bottom/Right Diagonal)
+          SECTION 2: COMPANY 
          ========================================= */}
       <Link 
         href="/auth/company"

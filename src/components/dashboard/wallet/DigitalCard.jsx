@@ -5,7 +5,6 @@ export default function DigitalCard({ balance, loading }) {
   return (
     <div className="bg-slate-900 dark:bg-[#FF6B00] rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden h-56 md:h-72 flex flex-col justify-center transition-all duration-500">
       
-      {/* Background Decor: Scaled down for mobile */}
       <Wallet className="absolute -bottom-6 -right-6 md:-bottom-10 md:-right-10 size-48 md:size-64 opacity-10 rotate-12 pointer-events-none" />
 
       <div className="relative z-10">
@@ -25,7 +24,7 @@ export default function DigitalCard({ balance, loading }) {
       {/* Industrial Tag: Extra detail for that "Premium" feel */}
       <div className="absolute top-8 right-8 hidden md:block">
         <div className="border border-white/20 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest opacity-40">
-          ChopSure Secure
+          ChopSure
         </div>
       </div>
     </div>

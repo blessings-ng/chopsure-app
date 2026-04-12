@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Check, ArrowLeft, Download, Share2, Printer, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, Loader2, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+
+const BARCODE_WIDTHS = ['w-1', 'w-2', 'w-0.5', 'w-1.5', 'w-1', 'w-3', 'w-0.5', 'w-2', 'w-1', 'w-1', 'w-0.5', 'w-2', 'w-1', 'w-1.5', 'w-2', 'w-0.5', 'w-1', 'w-2', 'w-1', 'w-1.5', 'w-0.5', 'w-3', 'w-1', 'w-0.5', 'w-2', 'w-1', 'w-1.5', 'w-0.5', 'w-1'];
 
 export default function ReceiptPage() {
   const { id } = useParams();
@@ -13,8 +15,12 @@ export default function ReceiptPage() {
   const router = useRouter();
   const [tx, setTx] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
+    if (!id) return; 
+
     async function fetchReceipt() {
       const { data, error } = await supabase
         .from("transactions")
@@ -32,86 +38,182 @@ export default function ReceiptPage() {
     fetchReceipt();
   }, [id, supabase]);
 
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const receiptElement = document.getElementById("receipt-export"); 
+      
+      const canvas = await html2canvas(receiptElement, {
+        scale: 4, 
+        backgroundColor: null, 
+        useCORS: true,
+      });
+
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `ChopSure_Receipt_${tx.reference}.png`;
+      link.click();
+    } catch (error) {
+      console.error("Failed to generate receipt:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'ChopSure Receipt',
+          text: `Payment Receipt for ₦${tx.amount.toLocaleString()} - Ref: ${tx.reference}`,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log('User cancelled share');
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#050505]">
-      <Loader2 className="animate-spin text-[#FF6B00]" size={40} />
+    <div className="min-h-[100dvh] w-full bg-slate-200 dark:bg-[#0a0a0a] flex justify-center items-center px-4">
+      <Loader2 size={32} className="animate-spin text-slate-400"/>
     </div>
   );
 
   if (!tx) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-[#050505] p-6 text-center">
-      <h1 className="text-2xl font-black uppercase italic dark:text-white">Receipt Not Found</h1>
-      <Link href="/dashboard" className="mt-4 text-[#FF6B00] font-bold uppercase text-[10px] tracking-widest">Back to Dashboard</Link>
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-slate-200 dark:bg-[#0a0a0a] p-6 text-center">
+      <h1 className="text-xl font-black uppercase italic dark:text-white tracking-tighter">Receipt Not Found</h1>
+      <Link href="/dashboard" className="mt-6 px-6 py-3 bg-[#FF6B00] text-black font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all shadow-xl">
+        Return to Dashboard
+      </Link>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] py-12 px-6 font-sans">
-      <div className="max-w-md mx-auto">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 mb-8 uppercase font-black text-[10px] tracking-widest hover:text-[#FF6B00] transition-colors">
-          <ArrowLeft size={16}/> Dashboard
-        </Link>
+    // RESPONSIVE FIX 1: 'justify-center' aligns everything perfectly in the middle on Desktop screens
+    <div className="min-h-[100dvh] w-full overflow-x-hidden bg-slate-200 dark:bg-[#0a0a0a] flex flex-col items-center justify-center py-10 px-4 sm:px-6">
+      
+      {/* Wrapper to align Link and Receipt exactly the same width */}
+      <div className="w-full max-w-[320px] sm:max-w-[380px] flex flex-col">
+        
+        {/* DASHBOARD LINK */}
+        <div className="w-full flex justify-start mb-6">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 uppercase font-black text-[10px] sm:text-xs tracking-widest hover:text-[#FF6B00] transition-colors">
+            <ArrowLeft size={16}/> Dashboard
+          </Link>
+        </div>
 
+        {/* THE PAPER RECEIPT */}
         <motion.div 
+          id="receipt-export"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-white/5 rounded-[3rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-white/5"
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="w-full flex flex-col drop-shadow-xl"
         >
-          {/* SUCCESS HEADER */}
-          <div className="bg-[#10B981] p-10 text-center relative overflow-hidden">
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 relative z-10 shadow-xl"
-            >
-              <Check className="text-[#10B981]" size={40} strokeWidth={4} />
-            </motion.div>
-            <h2 className="text-white font-black uppercase italic tracking-tighter text-2xl relative z-10">Payment Successful</h2>
-            <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mt-1 relative z-10">Transaction Confirmed</p>
+          {/* Jagged Top Edge */}
+          <svg className="w-full h-2 sm:h-3 text-white dark:text-[#161616]" preserveAspectRatio="none" viewBox="0 0 100 100" fill="currentColor">
+            <polygon points="0,100 5,0 10,100 15,0 20,100 25,0 30,100 35,0 40,100 45,0 50,100 55,0 60,100 65,0 70,100 75,0 80,100 85,0 90,100 95,0 100,100" />
+          </svg>
+
+          {/* Paper Body */}
+          <div className="bg-white dark:bg-[#161616] w-full px-5 sm:px-8 py-6 sm:py-8 font-mono text-slate-900 dark:text-slate-300">
+            
+            {/* Header */}
+            <div className="text-center mb-6">
+              <p className="text-[10px] sm:text-xs tracking-[0.2em] mb-4 truncate overflow-hidden">*****************************</p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-widest mb-1">RECEIPT</h1>
+              <p className="text-[10px] sm:text-xs tracking-[0.2em] mb-4 truncate overflow-hidden">*****************************</p>
+              
+              <h2 className="text-base sm:text-lg font-bold mt-4">CHOPSURE APP</h2>
+              <p className="text-[10px] sm:text-xs mt-1 opacity-70">Lagos, Nigeria</p>
+              <p className="text-[10px] sm:text-xs mt-1 opacity-70">
+                {new Date(tx.created_at).toLocaleString('en-US', { 
+                  month: 'short', day: '2-digit', year: 'numeric', 
+                  hour: '2-digit', minute:'2-digit', hour12: false 
+                })}
+              </p>
+              {/* RESPONSIVE FIX 2: Break-all ensures long references wrap on tiny phones */}
+              <p className="text-[9px] sm:text-[10px] mt-1 opacity-50 break-all">REF: {tx.reference}</p>
+            </div>
+
+            <div className="border-b-2 border-dashed border-slate-300 dark:border-slate-700 w-full mb-6"></div>
+
+            {/* Itemized Section */}
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex justify-between items-start text-xs sm:text-sm gap-4">
+                <span className="flex-1 uppercase break-words">1x {tx.description}</span>
+                <span className="font-bold whitespace-nowrap">₦{tx.amount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="border-b-2 border-dashed border-slate-300 dark:border-slate-700 w-full mb-6"></div>
+
+            {/* Total Section */}
+            <div className="flex justify-between items-center mb-8">
+              <span className="text-base sm:text-lg font-bold">TOTAL</span>
+              <span className="text-lg sm:text-xl font-bold break-all text-right ml-4">₦{tx.amount.toLocaleString()}</span>
+            </div>
+
+            <div className="flex justify-between items-center text-[10px] sm:text-xs opacity-70 mb-2 gap-4">
+              <span>Payment Method</span>
+              <span className="text-right">Digital Wallet</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] sm:text-xs opacity-70 mb-8 gap-4">
+              <span>Status</span>
+              <span className="text-right">SUCCESSFUL</span>
+            </div>
+
+            <div className="border-b-2 border-dashed border-slate-300 dark:border-slate-700 w-full mb-6"></div>
+
+            {/* Footer & Barcode */}
+            <div className="text-center flex flex-col items-center">
+              <p className="text-xs sm:text-sm font-bold tracking-widest mb-6">THANK YOU</p>
+              
+              {/* Barcode dynamically scales to fit the width */}
+              <div className="w-full flex h-10 sm:h-14 items-center justify-between opacity-80 dark:opacity-50">
+                {BARCODE_WIDTHS.map((w, i) => (
+                  <div key={i} className={`h-full bg-slate-900 dark:bg-white ${w}`}></div>
+                ))}
+              </div>
+              <p className="text-[8px] sm:text-[9px] tracking-[0.4em] mt-2 opacity-50">{tx.reference.substring(0, 16)}</p>
+            </div>
+
           </div>
 
-          {/* DETAILS */}
-          <div className="p-10 space-y-8">
-            <div className="text-center border-b border-dashed border-slate-200 dark:border-white/10 pb-8">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] mb-2">Amount Paid</p>
-              <h1 className="text-6xl font-black italic tracking-tighter text-slate-900 dark:text-white">
-                ₦{tx.amount.toLocaleString()}
-              </h1>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              <Detail label="Vendor / Description" value={tx.description} />
-              <Detail label="Reference" value={tx.reference} />
-              <Detail label="Date & Time" value={new Date(tx.created_at).toLocaleString()} />
-              <Detail label="Status" value="SUCCESSFUL" isStatus />
-            </div>
-
-            <div className="pt-8 grid grid-cols-2 gap-4">
-              <button onClick={() => window.print()} className="flex items-center justify-center gap-2 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-white hover:bg-[#FF6B00] hover:text-white transition-all">
-                <Printer size={16}/> Print
-              </button>
-              <button className="flex items-center justify-center gap-2 py-4 bg-[#FF6B00] rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-500/20 hover:scale-105 transition-all">
-                <Share2 size={16}/> Share
-              </button>
-            </div>
-          </div>
+          {/* Jagged Bottom Edge */}
+          <svg className="w-full h-2 sm:h-3 text-white dark:text-[#161616]" preserveAspectRatio="none" viewBox="0 0 100 100" fill="currentColor">
+            <polygon points="0,0 5,100 10,0 15,100 20,0 25,100 30,0 35,100 40,0 45,100 50,0 55,100 60,0 65,100 70,0 75,100 80,0 85,100 90,0 95,100 100,0" />
+          </svg>
         </motion.div>
 
-        <p className="text-center mt-12 text-[9px] font-black uppercase text-slate-400 tracking-[0.4em]">
-          Secured by ChopSafe Protocol
-        </p>
-      </div>
-    </div>
-  );
-}
+        {/* RESPONSIVE FIX 3: Buttons stack on narrow screens, sit side-by-side on wider screens */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 pb-6">
+          <button 
+            onClick={handleDownload} 
+            disabled={isDownloading}
+            className="flex items-center justify-center gap-2 py-4 bg-white dark:bg-[#161616] border border-slate-300 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white hover:border-[#FF6B00] hover:text-[#FF6B00] dark:hover:border-[#FF6B00] dark:hover:text-[#FF6B00] transition-all disabled:opacity-50 shadow-sm"
+          >
+            {isDownloading ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>} 
+            {isDownloading ? 'Saving...' : 'Download'}
+          </button>
+          
+          <button 
+            onClick={handleShare}
+            className={`flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg transition-all ${isCopied ? 'bg-[#10B981] shadow-emerald-500/20' : 'bg-[#FF6B00] shadow-orange-500/20 hover:scale-[1.02]'}`}
+          >
+            {isCopied ? <Check size={14}/> : (navigator.share ? <Share2 size={14}/> : <Copy size={14}/>)}
+            {isCopied ? 'Copied!' : 'Share'}
+          </button>
+        </div>
 
-function Detail({ label, value, isStatus }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{label}</span>
-      <span className={`text-xs font-black uppercase italic ${isStatus ? 'text-[#10B981]' : 'text-slate-900 dark:text-white'}`}>
-        {value}
-      </span>
+      </div>
     </div>
   );
 }

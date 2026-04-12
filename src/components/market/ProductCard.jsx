@@ -35,7 +35,6 @@ export default function ProductCard({ product, qty, addToCart, removeFromCart })
             onClick={() => addToCart(product.id)} 
             className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center hover:bg-[#FF6B00] hover:text-white transition-all active:scale-90"
           >
-            {/* FIXED: Removed md:size and used className instead */}
             <Plus className="w-[14px] h-[14px] md:w-[16px] md:h-[16px]" />
           </button>
         ) : (

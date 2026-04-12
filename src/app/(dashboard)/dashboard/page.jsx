@@ -25,10 +25,12 @@ const SuccessNotice = ({ show, onClose }) => (
         exit={{ opacity: 0 }}
         className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] md:w-auto"
       >
-        <div className="bg-[#10B981] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/20 backdrop-blur-xl">
-          <CheckCircle2 size={20} />
-          <p className="text-xs font-black uppercase tracking-widest italic">Action Successful</p>
-          <button onClick={onClose} className="ml-4 opacity-50"><X size={18} /></button>
+        <div className="bg-[#10B981] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 border border-white/20 backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+            <CheckCircle2 size={20} className="shrink-0" />
+            <p className="text-xs font-black uppercase tracking-widest italic">Action Successful</p>
+          </div>
+          <button onClick={onClose} className="ml-4 opacity-50 hover:opacity-100 transition-opacity shrink-0"><X size={18} /></button>
         </div>
       </motion.div>
     )}
@@ -61,7 +63,6 @@ function DashboardContent() {
 
       setConsumptionMode(wallet?.consumption_mode || "cooked");
 
-      // STRICT EXPIRY LOGIC: Default to NULL. Only unlock if both tier AND a valid future date exist.
       const metadata = user.user_metadata || {};
       let validTier = null; 
 
@@ -128,131 +129,139 @@ function DashboardContent() {
   if (loading) return <Skeleton className="h-screen w-full" />;
 
   return (
-    <div className="relative space-y-10 pb-16 px-4 md:px-0">
+    <div className="relative space-y-8 md:space-y-10 pb-16 px-4 md:px-0">
       <SuccessNotice show={showSuccess} onClose={() => setShowSuccess(false)} />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
-        <div>
+      {/* HEADER SECTION */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 pt-4">
+        <div className="w-full xl:w-auto overflow-hidden">
           <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest bg-white/5 mb-2 ${currentUnit?.theme}`}>
             {currentUnit?.icon} {currentUnit?.name}
           </div>
-          <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white -ml-1">welcome back!</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white -ml-1">Welcome back!</h1>
         </div>
 
-        {/* ACTION BAR: Top up is open to fund wallet, others route to subscription if inactive */}
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <Link href="/top-up" className="px-5 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-            Top Up Vault
+        <div className="flex flex-row w-full xl:w-auto gap-1.5 sm:gap-2">
+          <Link href="/top-up" className="flex-1 min-w-0 flex justify-center items-center px-1 sm:px-5 py-3 sm:py-3.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-black text-[8px] sm:text-[9px] uppercase tracking-widest rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-center whitespace-normal leading-tight">
+            Top Up
           </Link>
           
           {consumptionMode === "cooked" && (
-            <Link href={isSubscribed ? "/wallet/transfer" : "/subscription"} className={`px-5 py-3 bg-white dark:bg-white/5 border font-black text-[9px] uppercase tracking-widest rounded-xl flex items-center gap-2 transition-colors ${isSubscribed ? 'border-[#FF6B00]/30 text-[#FF6B00] hover:bg-[#FF6B00]/10' : 'border-red-500/30 text-red-500 hover:bg-red-500/10'}`}>
-              {isSubscribed ? <Send size={12} /> : <Lock size={12} />} Transfer
+            <Link href={isSubscribed ? "/wallet/transfer" : "/subscription"} className={`flex-1 min-w-0 flex justify-center items-center px-1 sm:px-5 py-3 sm:py-3.5 bg-white dark:bg-white/5 border font-black text-[8px] sm:text-[9px] uppercase tracking-widest rounded-xl gap-1 sm:gap-2 transition-colors ${isSubscribed ? 'border-[#FF6B00]/30 text-[#FF6B00] hover:bg-[#FF6B00]/10' : 'border-red-500/30 text-red-500 hover:bg-red-500/10'} text-center whitespace-normal leading-tight`}>
+              {isSubscribed ? <Send size={12} className="hidden sm:block shrink-0" /> : <Lock size={12} className="hidden sm:block shrink-0" />} 
+              Transfer
             </Link>
           )}
 
-          <Link href="/subscription" className="px-5 py-3 bg-[#FF6B00] text-black font-black text-[9px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all">
-            {isSubscribed ? 'Plan details' : 'Activate Plan'}
+          <Link href="/subscription" className="flex-1 min-w-0 flex justify-center items-center px-1 sm:px-5 py-3 sm:py-3.5 bg-[#FF6B00] text-black font-black text-[8px] sm:text-[9px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-[1.02] transition-all text-center whitespace-normal leading-tight">
+            {isSubscribed ? 'Plan Details' : 'Activate Plan'}
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <VaultCard user={user} />
+      {/* TOP CARDS GRID - FIXED WITH STRICT FLEXBOX */}
+      {/* RESPONSIVE FIX: flex-col on mobile, md:flex-row on big screens with flex-1 on the children */}
+      <div className="flex flex-col md:flex-row gap-6 w-full">
+        
+        {/* VAULT CARD - Wrapped to force 50% width on md screens */}
+        <div className="flex-1 w-full min-w-0 flex flex-col h-full">
+          <VaultCard user={user} />
+        </div>
 
-        {/* FIXED: Checks isSubscribed FIRST before showing Raw Mart */}
-        {isSubscribed && consumptionMode === "raw" ? (
-          <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-10 relative overflow-hidden shadow-xl text-slate-900 dark:text-white">
-            <div className="absolute top-0 right-0 p-8 opacity-5"><ShoppingCart size={120} /></div>
-            <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Bulk Procurement</p>
-              <div>
-                <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">RAW MART</h2>
-                <p className={`text-[10px] font-bold uppercase tracking-widest mt-2 ${isMartOpen ? 'text-[#10B981]' : 'text-[#FF6B00]'}`}>
-                  {isMartOpen ? "Checkout Window Active" : `Checkout ${martNextDate}`}
-                </p>
-                <Link href="/mart" className="mt-6 inline-flex items-center px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg bg-[#FF6B00] text-black hover:scale-105 transition-all">
-                  Browse Mart <ArrowRight size={14} className="ml-2"/>
-                </Link>
+        {/* DAILY ALLOCATION / RAW MART CARD - Wrapped to force 50% width on md screens */}
+        <div className="flex-1 w-full min-w-0 flex flex-col h-full">
+          {isSubscribed && consumptionMode === "raw" ? (
+            <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden shadow-xl text-slate-900 dark:text-white h-full">
+              <div className="absolute top-0 right-0 p-8 opacity-5"><ShoppingCart size={120} /></div>
+              <div className="relative z-10 flex flex-col justify-between h-full min-h-[140px] md:min-h-[160px]">
+                <div>
+                  <h2 className="text-3xl min-[360px]:text-4xl md:text-5xl font-black tracking-tighter italic">RAW MART</h2>
+                  <p className={`text-[8px] min-[360px]:text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-2 ${isMartOpen ? 'text-[#10B981]' : 'text-[#FF6B00]'}`}>
+                    {isMartOpen ? "Checkout Window Active" : `Checkout ${martNextDate}`}
+                  </p>
+                  <Link href="/mart" className="mt-6 inline-flex items-center justify-center w-full sm:w-auto px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg bg-[#FF6B00] text-black hover:scale-105 transition-all">
+                    Check Mart <ArrowRight size={14} className="ml-2"/>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className={`rounded-[2.5rem] p-10 relative overflow-hidden shadow-xl ${isSubscribed ? 'bg-[#FF6B00] text-black' : 'bg-slate-100 dark:bg-white/5 border border-red-500/20 text-slate-900 dark:text-white'}`}>
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-              {isSubscribed ? <ShieldCheck size={120} /> : <Lock size={120} className="text-red-500" />}
-            </div>
-            <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-70">Daily Allocation</p>
-              <div>
-                {isSubscribed ? (
-                  <>
-                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic">₦{Math.floor(allowanceData.remaining).toLocaleString()}</h2>
-                    <div className="flex items-center gap-2 mt-4">
-                      <div className="h-1 flex-1 bg-black/10 rounded-full overflow-hidden">
-                        <div style={{ width: `${allowancePercentage}%` }} className="h-full bg-black/40" />
+          ) : (
+            <div className={`rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 relative overflow-hidden shadow-xl h-full flex flex-col justify-between ${isSubscribed ? 'bg-[#FF6B00] text-black' : 'bg-slate-100 dark:bg-white/5 border border-red-500/20 text-slate-900 dark:text-white'}`}>
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                {isSubscribed ? <ShieldCheck size={120} /> : <Lock size={120} className="text-red-500" />}
+              </div>
+              <div className="relative z-10 flex flex-col justify-between h-full min-h-[140px] md:min-h-[160px]">
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] opacity-70 mb-4 sm:mb-0">Daily Allocation</p>
+                <div>
+                  {isSubscribed ? (
+                    <>
+                      <h2 className="text-3xl min-[360px]:text-4xl md:text-5xl font-black tracking-tighter italic truncate">₦{Math.floor(allowanceData.remaining).toLocaleString()}</h2>
+                      <div className="flex items-center gap-3 mt-4">
+                        <div className="h-1.5 flex-1 bg-black/10 rounded-full overflow-hidden">
+                          <div style={{ width: `${allowancePercentage}%` }} className="h-full bg-black/40" />
+                        </div>
+                        <span className="text-[9px] font-black opacity-60 shrink-0">{Math.round(allowancePercentage)}%</span>
                       </div>
-                      <span className="text-[9px] font-black opacity-60">{Math.round(allowancePercentage)}%</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter italic text-red-500">₦0</h2>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mt-2 opacity-60 text-red-500">Plan Inactive</p>
-                  </>
-                )}
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-3xl min-[360px]:text-4xl md:text-5xl font-black tracking-tighter italic text-red-500">₦0</h2>
+                      <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-2 opacity-60 text-red-500">Plan Inactive</p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <RecentActivity user={user} />
+      {/* BOTTOM CARDS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         
-        {/* PROTOCOL STATUS BOX -> Becomes Activation Required on the side */}
-        <div className={`bg-white dark:bg-white/5 border rounded-[2.5rem] p-8 relative overflow-hidden ${isSubscribed ? 'border-slate-100 dark:border-white/10' : 'border-red-500/30'}`}>
+        <div className="w-full lg:col-span-2 overflow-hidden">
+          <RecentActivity user={user} />
+        </div>
+        
+        {/* PROTOCOL STATUS BOX */}
+        <div className={`bg-white dark:bg-white/5 border rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden h-fit ${isSubscribed ? 'border-slate-100 dark:border-white/10' : 'border-red-500/30'}`}>
           <div className="absolute -top-10 -right-10 opacity-5 rotate-12 pointer-events-none text-[#FF6B00]">
             <Activity size={150} />
           </div>
 
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSubscribed ? 'bg-[#FF6B00]/10 text-[#FF6B00]' : 'bg-red-500/10 text-red-500'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSubscribed ? 'bg-[#FF6B00]/10 text-[#FF6B00]' : 'bg-red-500/10 text-red-500'}`}>
                 {isSubscribed ? <Activity size={20} /> : <AlertTriangle size={20} />}
               </div>
-              <h3 className={`text-sm font-black italic uppercase ${isSubscribed ? 'text-slate-900 dark:text-white' : 'text-red-500'}`}>
+              <h3 className={`text-xs sm:text-sm font-black italic uppercase ${isSubscribed ? 'text-slate-900 dark:text-white' : 'text-red-500'}`}>
                 {isSubscribed ? 'Unit Type' : 'Activation Required'}
               </h3>
-            </div>
-            <div className="text-right">
-             
             </div>
           </div>
           
           <div className="space-y-3 relative z-10">
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Plan</p>
-                <p className={`text-sm font-black italic uppercase ${isSubscribed ? 'text-[#FF6B00]' : 'text-red-500'}`}>
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5 min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">Active Plan</p>
+                <p className={`text-xs sm:text-sm font-black italic uppercase truncate ${isSubscribed ? 'text-[#FF6B00]' : 'text-red-500'}`}>
                   {isSubscribed ? activeTier : 'NONE'}
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Diet Mode</p>
-                {/* Diet mode resets to PENDING if inactive */}
-                <p className={`text-sm font-black italic uppercase ${isSubscribed ? (consumptionMode === 'raw' ? 'text-green-500' : 'text-[#FF6B00]') : 'text-slate-500 dark:text-slate-400'}`}>
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5 min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">Mode</p>
+                <p className={`text-xs sm:text-sm font-black italic uppercase truncate ${isSubscribed ? (consumptionMode === 'raw' ? 'text-green-500' : 'text-[#FF6B00]') : 'text-slate-500 dark:text-slate-400'}`}>
                   {isSubscribed ? consumptionMode : 'PENDING'}
                 </p>
               </div>
             </div>
             
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5 flex justify-between items-center">
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                  {consumptionMode === 'raw' ? 'Procurement Limit' : 'Daily Cap Limit'}
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 min-w-0">
+              <div className="w-full sm:w-auto min-w-0">
+                <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">
+                  {consumptionMode === 'raw' ? 'Assigned Limit' : 'Daily Limit'}
                 </p>
-                <p className={`text-lg font-black italic uppercase ${isSubscribed ? 'dark:text-white' : 'text-red-500'}`}>
+                <p className={`text-base sm:text-lg font-black italic uppercase truncate ${isSubscribed ? 'dark:text-white' : 'text-red-500'}`}>
                   {!isSubscribed 
                     ? 'LOCKED' 
                     : consumptionMode === 'raw' 
@@ -262,7 +271,7 @@ function DashboardContent() {
                 </p>
               </div>
               {!isSubscribed && (
-                <Link href="/subscription" className="px-4 py-2 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-red-500/20">
+                <Link href="/subscription" className="w-full sm:w-auto flex justify-center px-5 py-3 sm:py-2 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-red-500/20 shrink-0">
                   Activate
                 </Link>
               )}
