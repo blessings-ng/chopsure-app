@@ -58,7 +58,9 @@ export default function Header() {
 
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle />
-          <button className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-[#FF6B00] transition-colors relative">
+          <button 
+          onClick={() => router.push("/notifications")} // <--- UPDATED THIS LINE
+          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-[#FF6B00] transition-colors relative">
             <Bell size={18} />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#FF6B00] rounded-full border-2 border-white dark:border-[#050505]"></span>
           </button>

@@ -96,10 +96,8 @@ export default function ReceiptPage() {
   );
 
   return (
-    // RESPONSIVE FIX 1: 'justify-center' aligns everything perfectly in the middle on Desktop screens
     <div className="min-h-[100dvh] w-full overflow-x-hidden bg-slate-200 dark:bg-[#0a0a0a] flex flex-col items-center justify-center py-10 px-4 sm:px-6">
       
-      {/* Wrapper to align Link and Receipt exactly the same width */}
       <div className="w-full max-w-[320px] sm:max-w-[380px] flex flex-col">
         
         {/* DASHBOARD LINK */}
@@ -139,7 +137,6 @@ export default function ReceiptPage() {
                   hour: '2-digit', minute:'2-digit', hour12: false 
                 })}
               </p>
-              {/* RESPONSIVE FIX 2: Break-all ensures long references wrap on tiny phones */}
               <p className="text-[9px] sm:text-[10px] mt-1 opacity-50 break-all">REF: {tx.reference}</p>
             </div>
 
@@ -193,7 +190,6 @@ export default function ReceiptPage() {
           </svg>
         </motion.div>
 
-        {/* RESPONSIVE FIX 3: Buttons stack on narrow screens, sit side-by-side on wider screens */}
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8 pb-6">
           <button 
             onClick={handleDownload} 

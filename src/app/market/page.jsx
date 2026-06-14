@@ -84,11 +84,11 @@ export default function MiniMartPage() {
           </div>
           
           <h1 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white mb-2">
-            Access <span className="text-red-500">Denied</span>
+            Access Denied
           </h1>
           
           <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
-            The Raw Mart is strictly reserved for users on the <span className="text-[#10B981]">Raw Consumption Mode</span>. Your current unit is configured for Cooked meals.
+            The Raw Mart is strictly reserved for users on the Raw Consumption Mode. Your current unit is for Cooked meals.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full">
@@ -122,7 +122,6 @@ export default function MiniMartPage() {
       />
 
       <div className="flex-1 w-full">
-        {/* Category Bar - RESPONSIVE FIX: Tighter padding on mobile */}
         <div className="sticky top-[72px] z-30 bg-white dark:bg-[#050505] border-b border-slate-200 dark:border-white/5 py-4 px-4 sm:px-8 overflow-x-auto scrollbar-hide">
           <div className="flex gap-2">
             {CATEGORIES.map(cat => (
@@ -137,7 +136,6 @@ export default function MiniMartPage() {
           </div>
         </div>
 
-        {/* Product Grid - RESPONSIVE FIX: Scales perfectly from 2 columns on mobile to 5 on large desktops */}
         <main className="w-full p-4 sm:p-6 md:p-8 pb-32"> 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {filteredProducts.map(product => (

@@ -182,7 +182,7 @@ function LoginContent() {
               </div>
               <div>
                 <h4 className="text-white font-black italic uppercase tracking-wider text-sm md:text-base leading-none mb-1">
-                  Logged in.
+                  Login successful!
                 </h4>
               </div>
             </div>

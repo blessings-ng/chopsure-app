@@ -12,10 +12,8 @@ export default function VaultCard({ user }) {
     async function getBalance() {
       if (!user) return;
       
-      // Initialize Supabase inside the effect to prevent infinite re-render loops
       const supabase = createClient(); 
       
-      // FIXED: maybeSingle() stops the 406 crash if the wallet is empty
       const { data, error } = await supabase
         .from("wallets")
         .select("balance")

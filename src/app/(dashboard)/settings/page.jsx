@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Bell, ShieldCheck, LogOut, ChevronRight, Loader2, Smartphone, Mail, Lock } from "lucide-react";
+import { User, Bell, ShieldCheck, LogOut, ChevronRight, Loader2, Smartphone, Mail, Lock, Eye, EyeOff, X } from "lucide-react";
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -15,22 +15,78 @@ export default function SettingsPage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
-  const [pushEnabled, setPushEnabled] = useState(true);
+  // Credentials Modal States
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [showPasswordText, setShowPasswordText] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState("");
+
+  // Local UI States for toggles
+  const [pushEnabled, setPushEnabled] = useState(false); // Default to off based on your preference
   const [emailEnabled, setEmailEnabled] = useState(false);
 
   useEffect(() => {
-    async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUser(user);
-      setLoading(false);
+    let isMounted = true;
+
+    async function getSettingsContext() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (!session) {
+          if (isMounted) router.push("/auth/login");
+          return;
+        }
+
+        if (isMounted) {
+          setUser(session.user);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Lock contention bypass on settings frame:", err);
+        if (isMounted) setLoading(false);
+      }
     }
-    getUser();
-  }, [supabase]);
+
+    getSettingsContext();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supabase, router]);
+
+  // Handles production password changes using Supabase auth management API
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      setPasswordFeedback("Password must be at least 6 characters.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordFeedback("");
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      setPasswordFeedback(error.message);
+    } else {
+      setPasswordFeedback("Credentials configured successfully!");
+      setNewPassword("");
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPasswordFeedback("");
+      }, 1500);
+    }
+    setIsUpdatingPassword(false);
+  };
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
     await supabase.auth.signOut();
     router.push("/auth/login");
+    router.refresh();
   };
 
   if (loading) {
@@ -42,25 +98,25 @@ export default function SettingsPage() {
   }
 
   return (
-    // Max-width container prevents the "scattered" desktop look
     <div className="w-full max-w-[1200px] mx-auto pb-24 px-4 sm:px-6 lg:px-8 space-y-8 md:space-y-12">
       
       {/* HEADER */}
       <div className="pt-8 md:pt-12">
+        <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] mb-2">User Workspace</p>
         <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white -ml-1">
           <span className="text-[#FF6B00]">Settings</span>
         </h1>
       </div>
 
-      {/* GRID SYSTEM: md:grid-cols-12 gives us more granular control over desktop width */}
+      {/* GRID SYSTEM */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10 items-start">
         
-        {/* LEFT COLUMN: Profile (Takes 4/12 columns on desktop) */}
+        {/* LEFT COLUMN: Profile */}
         <div className="md:col-span-4 space-y-6">
           <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 shadow-sm">
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-[#FF6B00] to-orange-400 flex items-center justify-center text-black font-black text-2xl mb-4 shadow-lg shadow-orange-500/20">
-                {user?.email?.charAt(0).toUpperCase()}
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </div>
               <h3 className="text-sm font-black uppercase italic tracking-widest text-slate-900 dark:text-white truncate w-full">Account Identity</h3>
               <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-1">Personal Details</p>
@@ -85,7 +141,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Preferences & Security (Takes 8/12 columns on desktop) */}
+        {/* RIGHT COLUMN: Preferences & Security */}
         <div className="md:col-span-8 flex flex-col gap-6 lg:gap-8">
           
           {/* PREFERENCES SECTION */}
@@ -119,7 +175,10 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 hover:border-[#FF6B00]/40 transition-all group">
+              <button 
+                onClick={() => setShowPasswordModal(true)}
+                className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 hover:border-[#FF6B00]/40 transition-all group"
+              >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="p-2.5 bg-white dark:bg-white/10 rounded-xl text-slate-600 dark:text-slate-400 group-hover:text-[#FF6B00] transition-colors"><Lock size={16} /></div>
                   <div className="text-left truncate">
@@ -149,7 +208,78 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* MODAL: ARE YOU SURE? */}
+      {/* MODAL: CHANGE CREDENTIALS */}
+      <AnimatePresence>
+        {showPasswordModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-[360px] bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => { setShowPasswordModal(false); setPasswordFeedback(""); }} 
+                className="absolute top-6 right-6 p-2 bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-[#FF6B00] rounded-full transition-colors"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="w-14 h-14 bg-[#FF6B00]/10 text-[#FF6B00] rounded-2xl flex items-center justify-center mb-6">
+                <Lock size={24} />
+              </div>
+
+              <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white text-left mb-1">
+                Update Security
+              </h3>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 text-left mb-6">
+                Configure account credentials
+              </p>
+
+              <form onSubmit={handlePasswordUpdate} className="space-y-5 text-left">
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-2">New Password</label>
+                  <div className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-2xl px-4 py-3.5 flex items-center justify-between gap-3 focus-within:border-[#FF6B00]/50 border-2 transition-all">
+                    <input 
+                      type={showPasswordText ? "text" : "password"} 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••" 
+                      className="bg-transparent border-none outline-none text-sm font-bold text-slate-900 dark:text-white w-full"
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPasswordText(!showPasswordText)} 
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                    >
+                      {showPasswordText ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {passwordFeedback && (
+                  <p className={`text-[9px] font-black uppercase tracking-wider ${passwordFeedback.includes("success") ? "text-green-500" : "text-red-500"}`}>
+                    {passwordFeedback}
+                  </p>
+                )}
+
+                <div className="pt-2">
+                  <button 
+                    type="submit"
+                    disabled={isUpdatingPassword || !newPassword}
+                    className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-30"
+                  >
+                    {isUpdatingPassword ? <Loader2 className="animate-spin" size={14} /> : "Update Credentials"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL: ARE YOU SURE LOGOUT? */}
       <AnimatePresence>
         {showLogoutModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
