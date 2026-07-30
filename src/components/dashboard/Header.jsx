@@ -11,6 +11,7 @@ export default function Header() {
   const supabase = createClient();
   const router = useRouter();
   const [firstName, setFirstName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // MODAL STATES
@@ -18,14 +19,31 @@ export default function Header() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      if (user && isMounted) {
         setFirstName(user.user_metadata?.first_name || "User");
+        setAvatarUrl(user.user_metadata?.avatar_url || null);
       }
-      setLoading(false);
+      if (isMounted) setLoading(false);
     };
     getUser();
+
+    // BACKGROUND SYNC LISTENER
+    // Automatically updates the header when profile changes in Settings
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'USER_UPDATED' || event === 'SIGNED_IN') && session?.user && isMounted) {
+        setFirstName(session.user.user_metadata?.first_name || "User");
+        setAvatarUrl(session.user.user_metadata?.avatar_url || null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [supabase]);
 
   // THE ACTUAL LOGOUT LOGIC
@@ -43,9 +61,15 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {/* AVATAR SECTION */}
           {loading ? (
-            <div className="w-10 h-10 rounded-full animate-pulse bg-slate-200 dark:bg-white/10" />
+            <div className="w-10 h-10 rounded-full animate-pulse bg-slate-200 dark:bg-white/10 shrink-0" />
+          ) : avatarUrl ? (
+            <img 
+              src={avatarUrl} 
+              alt="Profile" 
+              className="w-10 h-10 rounded-full object-cover shadow-lg shadow-orange-500/20 ring-2 ring-slate-200 dark:ring-white/10 shrink-0"
+            />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FF6B00] to-orange-400 flex items-center justify-center text-black font-black shadow-lg shadow-orange-500/20 ring-2 ring-white/10 shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FF6B00] to-orange-400 flex items-center justify-center text-black font-black shadow-lg shadow-orange-500/20 ring-2 ring-slate-200 dark:ring-white/10 shrink-0">
               {initial}
             </div>
           )}
@@ -59,7 +83,7 @@ export default function Header() {
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <ThemeToggle />
           <button 
-          onClick={() => router.push("/notifications")} // <--- UPDATED THIS LINE
+          onClick={() => router.push("/notifications")}
           className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-[#FF6B00] transition-colors relative">
             <Bell size={18} />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#FF6B00] rounded-full border-2 border-white dark:border-[#050505]"></span>

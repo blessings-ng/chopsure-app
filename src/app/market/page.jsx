@@ -20,7 +20,7 @@ export default function MiniMartPage() {
   const [cart, setCart] = useState({}); 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [consumptionMode, setConsumptionMode] = useState(null); // Added state for mode
+  const [consumptionMode, setConsumptionMode] = useState(null);
 
   useEffect(() => {
     async function getUserData() {
@@ -28,7 +28,6 @@ export default function MiniMartPage() {
       if (!user) return router.push("/auth/login");
       setUser(user);
 
-      // Fetch wallet to get consumption mode
       const { data: wallet } = await supabase
         .from("wallets")
         .select("consumption_mode")
@@ -71,7 +70,6 @@ export default function MiniMartPage() {
     </div>
   );
 
-  // SECURITY GUARD: Blocks Cooked users from seeing or using the Raw Mart
   if (consumptionMode === "cooked") {
     return (
       <div className="min-h-[100dvh] w-full overflow-hidden bg-slate-50 dark:bg-[#050505] flex flex-col items-center justify-center p-4 sm:p-6">

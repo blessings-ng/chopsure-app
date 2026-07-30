@@ -17,7 +17,6 @@ function LoginContent() {
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
 
-  // Dynamic Month Calculation
   const nextMonthName = new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('default', { month: 'long' });
 
   useEffect(() => {
@@ -76,12 +75,7 @@ function LoginContent() {
           <ArrowLeft size={14} /> Go Back
         </Link>
 
-        <div className="mb-8">
-          <span className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">
-            ChopSure
-          </span>
-        </div>
-
+      
         <div className="w-full max-w-md">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -106,7 +100,7 @@ function LoginContent() {
             </AnimatePresence>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
-              <InputGroup label="Email Address" name="email" type="email" icon={<Mail size={18}/>} onChange={handleChange} />
+              <InputGroup label="Email Address" name="email" type="email" onChange={handleChange} />
               <PasswordInputGroup label="Password" name="password" onChange={handleChange} />
               
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wide">
@@ -160,10 +154,10 @@ function LoginContent() {
            </div>
            <h2 className="text-6xl font-black italic text-white uppercase leading-[0.9] tracking-tighter mb-6">
               Don't Starve <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">In {nextMonthName}.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">In {nextMonthName} </span>
            </h2>
            <p className="text-lg text-white/70 font-medium leading-relaxed mb-10">
-              Access your secured budget. Your food is safe, your belly is secured.
+              Access your secured budget. Your food is safe, your belly is secured
            </p>
         </div>
       </div>
@@ -208,8 +202,8 @@ export default function LoginPage() {
 function InputGroup({ label, name, type, icon, onChange }) {
   return (
     <div className="relative group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#FF6B00] transition-colors">
-        {icon}
+     <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-slate-400 group-focus-within:text-[#FF6B00]">
+        <Mail size={18} />
       </div>
       <input 
         type={type} 
@@ -217,9 +211,9 @@ function InputGroup({ label, name, type, icon, onChange }) {
         onChange={onChange}
         placeholder=" " 
         required
-        className={`peer w-full h-14 bg-slate-50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 rounded-xl outline-none text-slate-900 dark:text-white font-bold transition-all duration-300 focus:border-[#FF6B00] focus:bg-white dark:focus:bg-black ${icon ? 'pl-12' : 'pl-4'} pr-4 pt-4`}
+        className="peer w-full h-14 bg-slate-50 dark:bg-white/5 border-2 border-slate-100 dark:border-white/5 focus:border-[#FF6B00] rounded-xl outline-none text-slate-900 dark:text-white font-bold transition-all focus:bg-white dark:focus:bg-black pl-12 pr-12 pt-4" 
       />
-      <label className={`absolute left-0 pointer-events-none text-xs font-bold uppercase tracking-wide text-slate-400 transition-all duration-300 peer-focus:text-[10px] peer-focus:top-3 peer-focus:text-[#FF6B00] peer-placeholder-shown:text-xs peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 ${icon ? 'peer-focus:left-12 peer-placeholder-shown:left-12' : 'peer-focus:left-4 peer-placeholder-shown:left-4'} top-3`}>
+       <label className="absolute left-12 top-1/2 -translate-y-1/2 text-xs font-bold uppercase tracking-wide pointer-events-none transition-all peer-focus:text-[10px] peer-focus:top-3 peer-placeholder-shown:text-xs peer-placeholder-shown:top-1/2 peer-placeholder-shown:left-12 top-3 text-slate-400 peer-focus:text-[#FF6B00]">
         {label}
       </label>
     </div>

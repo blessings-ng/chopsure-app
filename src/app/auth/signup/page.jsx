@@ -144,7 +144,7 @@ export default function SignupPage() {
                   </div>
                   
                   <InputGroup label="User Name" name="username" type="text" onChange={handleChange} />
-                  <InputGroup label="Email Address" name="email" type="email" icon={<Mail size={18}/>} onChange={handleChange} />
+                  <InputGroup label="Email Address" name="email" type="email"  onChange={handleChange} />
                   
                   <div className="space-y-4">
                     <PasswordInputGroup label="Create Password" name="password" onChange={handleChange} isValid={isPasswordSecure} />
@@ -174,7 +174,7 @@ export default function SignupPage() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed select-none">
-                      I agree to lock my budget and understand I cannot withdraw cash impulsively.
+                      I agree to lock my budget and understand I cannot withdraw cash impulsively
                     </p>
                   </label>
 
@@ -220,7 +220,7 @@ export default function SignupPage() {
               <CheckCircle2 size={14} /> Guaranteed Meals
            </div>
            <h2 className="text-6xl font-black italic text-white uppercase leading-[0.9] tracking-tighter mb-6">
-             Start <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">Locking Today.</span>
+             Start <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-orange-400">Locking Today</span>
            </h2>
            <div className="flex gap-8 border-t border-white/10 pt-8 mt-8">
              <div><p className="text-3xl font-black text-white">12k+</p><p className="text-xs text-white/50 uppercase tracking-widest font-bold">Users Fed</p></div>

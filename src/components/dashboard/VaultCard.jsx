@@ -24,28 +24,26 @@ export default function VaultCard({ user }) {
         console.error("VaultCard Fetch Error:", error.message);
       }
 
-      // Safely default to 0 if data is null (meaning brand new user with no wallet yet)
       setBalance(data?.balance || 0); 
       setIsLoading(false);
     }
     
     getBalance();
-  }, [user]); // Removed supabase from dependency array to stabilize the fetch
-
+  }, [user]); 
   const formatted = new Intl.NumberFormat('en-NG', {
     style: 'currency', currency: 'NGN', maximumFractionDigits: 0
   }).format(balance);
 
   return (
-    <div className="md:col-span-2 bg-[#050505] rounded-[2rem] p-8 relative overflow-hidden text-white shadow-xl">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF6B00]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-      <div className="relative z-10 flex flex-col justify-between h-full min-h-[180px]">
+    <div className="md:col-span-2 bg-[#050505] rounded-[2rem] p-2 relative overflow-hidden text-white shadow-xl">
+      <div className="absolute top-0 right-0 w-34 h-64 bg-[#FF6B00]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div className="relative z-10 flex flex-col justify-between h-full xl:min-h-[180px] sm:min-h-[80px]">
         <div className="p-3 bg-white/10 w-fit rounded-xl backdrop-blur-md">
           <CreditCard size={24} className="text-[#FF6B00]" />
         </div>
-        <div className="mt-8">
+        <div className="mt-2">
           <p className="text-white/60 font-bold uppercase tracking-widest text-xs mb-1">Locked Budget</p>
-          {isLoading ? <Loader2 className="animate-spin text-[#FF6B00]" /> : <h2 className="text-5xl font-black tracking-tighter">{formatted}</h2>}
+          {isLoading ? <Loader2 className="animate-spin text-[#FF6B00]" /> : <h2 className="text-2xl xl:text-5xl font-black tracking-tighter">{formatted}</h2>}
         </div>
       </div>
     </div>

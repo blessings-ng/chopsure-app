@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image"; 
 import Link from "next/link";
-import { useState, useEffect, Suspense } from "react"; // Added Suspense
+import { useState, useEffect, Suspense } from "react";
 import { useTheme } from "next-themes";
 import { motion, useScroll, useTransform } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle"; 
@@ -10,7 +10,6 @@ import {
   X,
 } from "lucide-react";
 
-// 1. Separate the content into a sub-component
 function LandingContent() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -65,12 +64,11 @@ function LandingContent() {
         ))}
       </div>
 
-      {/* NAV */}
-      {/* NAV */}
+     
       <nav className="fixed top-0 w-full z-50 h-20 md:h-24 flex items-center justify-between px-4 md:px-20 border-b border-white/5 backdrop-blur-md bg-black/10">
-        <span className="text-lg md:text-3xl font-black italic tracking-tighter text-white uppercase group cursor-pointer drop-shadow-md shrink-0">
-          ChopSure
-        </span>
+        <span className="text-xl font-black italic tracking-tighter text-white uppercase drop-shadow-md">
+            Chop<span className="text-[#FF6B00]">Sure</span>
+         </span>
         
         <div className="flex items-center gap-3 md:gap-6">
           <ThemeToggle />
@@ -82,7 +80,6 @@ function LandingContent() {
             Login
           </Link>
 
-          {/* CTA BUTTON: Reduced padding and font size for mobile */}
           <Link 
             href="/auth" 
             className="bg-[#FF6B00] text-white font-black px-4 md:px-8 py-2 md:py-3 rounded-none skew-x-[-10deg] uppercase italic tracking-tighter hover:bg-[#10B981] hover:skew-x-[0deg] transition-all shadow-lg shadow-orange-500/20 text-[10px] md:text-base whitespace-nowrap"

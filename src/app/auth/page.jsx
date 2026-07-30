@@ -53,7 +53,7 @@ export default function AuthSelectionPage() {
            </h2>
            
            <p className="mt-4 text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/80 border-l-2 border-[#FF6B00] pl-3">
-              Personal Food Vault
+              Personal Food Account
            </p>
            
            <div className="mt-6 flex items-center gap-2 text-xs md:text-sm font-black uppercase text-[#FF6B00] bg-white px-4 py-2 rounded-full w-fit group-hover:bg-[#FF6B00] group-hover:text-white transition-colors">

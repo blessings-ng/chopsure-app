@@ -53,7 +53,6 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
     try {
       if (!user) throw new Error("Session expired. Please log in again.");
 
-      // 1. SUBSCRIPTION CHECK (GATE 1)
       const tier = user?.user_metadata?.subscription_tier;
       if (!tier) {
         setErrorMsg("Plan Inactive: Redirecting to Subscription Plans...");
@@ -64,7 +63,6 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
         return;
       }
 
-      // 2. WINDOW CHECK FOR RAW USERS (GATE 2)
       const { data: walletData } = await supabase
         .from("wallets")
         .select("consumption_mode, balance")
@@ -72,10 +70,10 @@ export default function CartSidebar({ isOpen, setIsOpen, cart = {}, addToCart, r
         .single();
 
       const today = new Date().getDate();
-      const isWindowOpen = (today >= 10 && today <= 13) || (today >= 25 && today <= 28);
+      const isWindowOpen = (today >= 10 && today <= 13) || (today >= 19 && today <= 28);
 
       if (walletData?.consumption_mode === "raw" && !isWindowOpen) {
-        showError("Action cannot be carried out now. Check back on 10th-13th and 25th-28th");
+        showError("Action cannot be carried out now. Check back on 10th-13th and 19th-28th");
         setLoading(false);
         return;
       }
